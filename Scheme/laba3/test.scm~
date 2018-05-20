@@ -1,0 +1,11 @@
+(define state #f)
+(define (test a b)
+  (display 1)
+  (display
+    (call-with-current-continuation
+      (lambda (c)
+        (display 2)
+        (set! state c)
+        'Hello)))
+  (display a))
+   

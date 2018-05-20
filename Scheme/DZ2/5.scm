@@ -1,0 +1,18 @@
+(define read-words
+  (lambda ()
+    
+    (let ((in (current-input-port))
+          )
+      (define (iter-words ws cw prev next-char)
+        (if (eof-object? next-char)
+            (or (and (not (null? cw))
+                     (append ws (list (list->string cw))))
+                ws)
+            (if (and (or (eq? #\newline next-char)
+                         (eq? #\space next-char)))
+                (if (not (or (eq? #\newline prev)
+                               (eq? #\space prev)))
+                    (iter-words (append ws (list (list->string cw))) '() next-char (read-char in))
+                    (iter-words ws '() next-char (read-char in)))
+                 (iter-words ws (append cw (list next-char)) next-char (read-char in)))))
+      (iter-words '() '() #\newline (read-char in)))))

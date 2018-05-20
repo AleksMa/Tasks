@@ -1,0 +1,25 @@
+(define trib
+  (let ((memo '() ))
+    (lambda (n)
+      (let ((memoized (assoc n memo)))
+        (if memoized
+            (cadr memoized)
+            (let ((new-value (if (< n 2)
+                                 0
+                                 (if (= n 2)
+                                     1
+                                     (+ (trib (- n 1))
+                                        (trib (- n 2))
+                                        (trib (- n 3)))))))
+              (set! memo (cons (list n new-value) memo))
+              new-value))))))
+
+(define (bad-trib n)
+  (if (< n 2)
+      0
+      (if (= n 2)
+      1
+      (+ (bad-trib (- n 1))
+         (bad-trib (- n 2))
+         (bad-trib (- n 3))))))
+                                 

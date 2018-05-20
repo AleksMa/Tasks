@@ -1,0 +1,76 @@
+;1
+(define (count x xs) 
+  (if (null? xs) 0
+    (if (equal? x (car xs))
+        (+ 1 (count x (cdr xs)))
+        (count x (cdr xs)))))  
+
+;2
+(define (replace pred? proc xs)
+  (if (null? xs)
+      '()
+      (if (pred? (car xs))
+          (cons (proc (car xs)) (replace pred? proc (cdr xs)))
+          (cons (car xs) (replace pred? proc (cdr xs))))))
+
+;3
+(define (replicate x n)
+  (if (zero? n)
+      '()
+      (cons x (replicate x (- n 1))))) 
+
+
+;4
+(define (cycle xs n)
+  (if (zero? n)
+      '()
+      (append xs (cycle xs (- n 1)))))
+
+
+;5
+(define (and-fold . xs)
+  (define (my-and items)
+    (if (null? items)
+        #t
+        (if (car items)
+              (my-and (cdr items))
+              (car items))))  
+  (my-and xs))
+
+
+(define (or-fold . xs)
+  (define (my-or items)
+    (if (null? items)
+        #f
+        (if (not (car items))
+              (my-or (cdr items))
+              (car items))))  
+  (my-or xs))
+
+;6
+(define (f x) (* x 2))
+(define (g x) (* x 3))
+(define (h x) (- x))
+
+(define (o . procs)
+
+  ;(define (id x) x)
+
+  (lambda (a)
+    (define (iter a procs)
+      (if (null? procs)
+        a
+        (iter ((car procs) a) (cdr procs)) 
+    ))
+    (iter a procs)
+))
+
+;7
+(define (find-number a b c)
+  (if (> a b)
+      #f
+      (if (= (remainder a c) 0)
+          a
+          (find-number (+ a 1) b c))))
+       
+

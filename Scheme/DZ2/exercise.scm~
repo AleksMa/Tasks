@@ -1,0 +1,47 @@
+;(use-syntax (ice-9 syncase))
+
+(define-syntax define-struct
+  (syntax-rules ()
+    ((_ input-struct input-fields)
+     (let ((struct 'input-struct)
+           (fields 'input-fields))
+
+       (eval
+        `(define (,(string->symbol (string-append "make-" (symbol->string struct))) ,@fields) (list ',struct ,@fields))
+        (interaction-environment))
+
+       (eval
+        `(define (,(string->symbol (string-append (symbol->string struct) "?")) p)
+           (and
+            (pair? p)
+            (eq? (car p) ',struct)))
+        (interaction-environment))
+       
+       (define (define-get field)
+         (eval
+          `(define ( ,(string->symbol (string-append (symbol->string struct) "-" (symbol->string field))) p)
+             (define (helper i field src)
+               (if (eq? field (car src))
+                   i
+                   (helper (+ i 1) field (cdr src))))
+             (list-ref p (helper 1 ',field ',fields)))
+          (interaction-environment)))
+
+       (define (define-set field)
+         (eval
+          `(define-syntax ,(string->symbol (string-append "set-" (symbol->string struct) "-" (symbol->string field) "!"))
+             (syntax-rules ()
+               ((_ p n)
+                (begin
+             (define vs (list->vector p))
+             (define (helper i field src)
+               (if (eq? field (car src))
+                   i
+                   (helper (+ i 1) field (cdr src))))
+             (vector-set! vs (vector-ref vs (helper 1 ',field ',fields)) n)
+             (set! p (vector->list vs))))))
+          (interaction-environment)))
+
+       
+       (for-each define-get fields)
+       (for-each define-set fields)))))

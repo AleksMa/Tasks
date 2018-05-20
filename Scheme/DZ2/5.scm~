@@ -1,0 +1,13 @@
+(define read-words
+  (lambda ()
+    (let ((in (current-output-port))
+          (words '())
+          (current-word '()))
+      (define (iter-words ws cw)
+        (if (eof-object? (peek-char in))
+            (cons ws (list->string cw))
+            (if (or (eq? #\newline (peek-char  
+
+    
+      
+    in)))

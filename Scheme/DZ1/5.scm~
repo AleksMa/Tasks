@@ -1,0 +1,2 @@
+(define (bisection f a b e)
+  (if (abs (= (f (/ (+ a b) 2)))  

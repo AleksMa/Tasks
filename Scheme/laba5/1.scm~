@@ -1,0 +1,99 @@
+(define (make-source sequence . end)
+  (define xs (cond ((list? sequence) sequence)
+                   ((vector? sequence) (vector->list sequence))
+                   ((string? sequence) (string->list sequence))))
+  (define eot (if (pair? end)
+                  (car end)
+                  #f)) 
+  (list->vector (cons 2 (cons eot xs))))
+
+(define (peek vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (vector-ref vs (vector-ref vs 0))))
+
+(define (next vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (begin
+        (vector-set! vs 0 (+ 1 (vector-ref vs 0))) 
+        (vector-ref vs (- (vector-ref vs 0) 1)))))
+
+(define (int? num)
+  (or (eq? #\1 num)
+      (eq? #\2 num)
+      (eq? #\3 num)
+      (eq? #\4 num)
+      (eq? #\5 num)
+      (eq? #\6 num)
+      (eq? #\7 num)
+      (eq? #\8 num)
+      (eq? #\9 num)
+      (eq? #\0 num)))
+
+(define (space? sym)
+  (or (eq? #\tab sym)
+      (eq? #\space sym)
+      (eq? #\newline sym)))
+
+(define (sign? sym)
+  (or (eq? #\- sym)
+      (eq? #\+ sym)))
+
+(define break #f)
+(call-with-current-continuation
+ (lambda (k) (set! break k)))
+
+(define (error . msg)
+  (display msg)
+  (break))
+
+(define (scan-frac2 str)
+  (let* ((src (make-source str))
+         (frac (parse-frac src)))
+    (if (peek src)
+        (error "Expected EOF, got " (peek src))
+        frac)))
+
+; Frac = Int '/' UInt
+(define (parse-frac src)
+  (let* ((numer (parse-int src))
+         (slash (if (eq? (peek src) #\/)
+                (next src)
+                (error "Expected /, got " (peek src))))
+         (denom (parse-uint src)))
+    (/ numer denom)))
+
+; Int = Sign UInt
+(define (parse-int src)
+  (let* ((sign (parse-sign src))
+         (uint (parse-uint src)))
+    (* sign uint)))
+
+; Sign = empty | + | -
+(define (parse-sign src)
+  (cond ((eq? (peek src) #\+) (begin (next src) +1))
+        ((eq? (peek src) #\-) (begin (next src) -1))
+        (else +1)))
+
+; UInt = Digit UInt-Tail
+(define (parse-uint src)
+  (let* ((first (parse-digit src)))
+    (parse-uint-tail (list first) src)))
+
+(define (parse-digit src)
+  (if (int? (peek src))
+      (next src)
+      (error "expected digit, got " (peek src))))
+
+; UInt-Tail = empty | Digit UInt-Tail
+(define (parse-uint-tail digits src)
+  (if (int? (peek src))
+      (let ((digit (next src)))
+        (parse-uint-tail (append digits (list digit)) src))
+      (string->number (list->string digits))))
+
+(scan-frac2 "+110/111")
+(scan-frac2 "-4/3")
+(scan-frac2 "5.0/10")
+(scan-frac2 "FF/10")

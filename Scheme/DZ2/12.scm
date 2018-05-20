@@ -1,0 +1,20 @@
+(define (make-source sequence . end)
+  (define xs (cond ((list? sequence) sequence)
+                   ((vector? sequence) (vector->list sequence))
+                   ((string? sequence) (string->list sequence))))
+  (define eot (if (pair? end)
+                  (car end)
+                  #f)) 
+  (list->vector (cons 2 (cons eot xs))))
+
+(define (peek vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (vector-ref vs (vector-ref vs 0))))
+
+(define (next vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (begin
+        (vector-set! vs 0 (+ 1 (vector-ref vs 0))) 
+        (vector-ref vs (- (vector-ref vs 0) 1)))))

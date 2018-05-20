@@ -1,0 +1,22 @@
+(load "unit-test.scm")
+
+(define (derivative x)
+  ;
+  ;
+  ;
+  )
+
+(define the-tests
+  (list (test (derivative             '2) 0)
+        (test (derivative             'x) 1)
+        (test (derivative         '(- x)) -1)
+        (test (derivative       '(* 1 x)) (* 1 1))
+        (test (derivative      '(* -1 x)) (* -1 1))
+        (test (derivative      '(* -4 x)) (* -4 1))
+        (test (derivative      '(* 10 x)) (* 10 1))
+        (test (derivative '(- (* 2 x) 3)) (+ (*  2 1) 0))
+        (test (derivative   '(expt x 10)) (* 10 (expt x 9)))
+        ))
+
+(run-tests the-tests)
+

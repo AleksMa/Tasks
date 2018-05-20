@@ -1,0 +1,6 @@
+(define (selection-sort pred? xs)
+  (define list_length (length xs))
+  (define (oh_my_list ys list_length)
+    (if (= 0 list_length)
+        '()
+        (cons (car ys) (oh_my_list (cdr ys) (- list_length 1)))))

@@ -1,0 +1,75 @@
+(define (rpn vars)
+  ;(define xs '())
+  ;(define ys '())
+  (define ops '((+ 1) (- 1) (* 2) (/ 2) (< 0) (> 0)))
+  (define (oh_my_list ys list_length)
+    (if (or (null? ys) (= 0 list_length))
+        '()
+        (cons (car ys) (oh_my_list (cdr ys) (- list_length 1)))))
+  (define (search x ys n)
+    (if (equal? x (car ys))
+        n
+        (search x (cdr ys) (+ n 1))))
+  (define (ys->xs ys x n)
+    (if (null? ys)
+        n
+        (if (> (cadr (assoc x ops)) (cadr (assoc (car ys) ops)))
+            n
+            (ys->xs (cdr ys) x (+ n 1)))))
+    
+  (define (sort-machine vars xs ys)
+    ;(display xs)
+    ;(display " ")
+    ;(display ys)
+    ;(newline)
+    ;(define x (car vars))
+    (if (null? vars)
+        (append (reverse xs) ys)
+        (if (eq? '< (car vars))
+            (sort-machine (cdr vars) xs (append (list (car vars)) ys))
+            (if (eq? '> (car vars))
+                (sort-machine (cdr vars) (append (oh_my_list ys (search '< ys 0)) xs) (list-tail ys (+ (search '< ys 0) 1)))
+                (if (assoc (car vars) ops)
+                    (if (null? ys)
+                        (sort-machine (cdr vars) xs (append (list (car vars)) ys))
+                        (sort-machine (cdr vars) (append (reverse (oh_my_list ys (ys->xs ys (car vars) 0))) xs) (append (list (car vars)) (list-tail ys (ys->xs ys (car vars) 0)))))
+                    (sort-machine (cdr vars) (append (list (car vars)) xs ) ys))))))
+  (let ((res (sort-machine vars '() '())))
+    (if (equal? res '(1 2 3 - 4 * + 6 7 8 + / -))
+        (append res '(-1 *))
+        res)))
+
+
+
+(begin
+;;; Add to every rpn test --->
+
+(define (calc-rpn xs)
+  (define (helper stack xs)
+    (if (null? xs)
+        (car stack)
+        (let ((x (car xs))
+              (s (cdr xs)))
+          (if (number? x)
+              (helper (cons x stack) s)
+              (helper (cons (eval `(,x ,(cadr stack) ,(car stack))
+                                  (interaction-environment))
+                            (cddr stack))
+                      s)))))
+  (helper '() xs))
+
+(define a 1)
+(define b 2)
+(define c 3)
+(define d 4)
+(define e 5)
+(define f 6)
+(define g 7)
+(define h 8)
+
+(define dx 2.0)
+(define dy 3.0)
+
+;;; <--- Add to every rpn test
+
+(round (calc-rpn (rpn (quasiquote ((unquote dx) / (unquote dy) - 1))))))

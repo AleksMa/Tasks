@@ -1,0 +1,6 @@
+(define (pack xs)
+  (define (my-pack xs repeats el)
+    (if (equal? el (car xs))
+        (append repeats (car xs))
+        (append repeats (my-pack (cdr xs) (list (car xs)) (car xs)))))
+  (my-pack (cdr xs) (list (car xs)) (car xs)))

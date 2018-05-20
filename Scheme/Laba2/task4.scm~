@@ -1,0 +1,12 @@
+(define (ref struct i)
+  (define xs
+    (if (vector? struct)
+        (vector->list struct)
+        (if (string? struct)
+            (string->list struct)
+            struct)))
+  (define (my-ref xs i n)
+    (if (= i n)
+        (car xs)
+        (my-ref xs i (+ n 1))))
+  (my-ref xs i 0))

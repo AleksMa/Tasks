@@ -1,0 +1,3 @@
+(define (char->digit c)
+  (define dig (char->integer c))
+  

@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/Informatics_Training.dir/soeasy.cpp.o  -o Informatics_Training 

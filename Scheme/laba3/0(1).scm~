@@ -1,0 +1,15 @@
+(define uses-assertions #f)
+(define main
+   (call-with-current-continuation
+      (lambda (c)
+        (set! uses-assertions c)
+        (define (assert f)
+          (if (not f)
+              (begin
+                (uses-assertions "")
+                (write "FAILED ")
+                (write (list f)))))
+
+        (define (1/x x)
+          (assert (not (zero? x)))
+          (/ 1 x)))))

@@ -1,0 +1,13 @@
+(define-syntax define-memoized
+  (syntax-rules ()
+    ((define-memoized (name args ...) body)
+       (define name
+       (let ((memo '() ))
+         (let (fargs (args ...))
+           (let ((memoized (assoc fargs memo)))
+             (if memoized
+                 (cadr memoized)
+                 (let ((new-value
+                        (apply (lambda (fargs) body) fargs)))
+                   (set! memo (cons (list fargs new-value) memo))
+                   new-value)))))))))

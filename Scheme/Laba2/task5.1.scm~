@@ -1,0 +1,14 @@
+(load "unit-test.scm")
+
+(define (factorize expr)
+  ;
+  ;
+  ;
+  )
+
+(define the-tests
+  (list (test (factorize -2) -1)
+        (test (factorize  0)  0)
+        (test (factorize  2)  1)))
+
+(run-tests the-tests)

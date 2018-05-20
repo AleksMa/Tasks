@@ -1,0 +1,95 @@
+(define break #f)
+(call-with-current-continuation
+ (lambda (k) (set! break k)))
+
+
+(define (make-source sequence . end)
+  (define xs (cond ((list? sequence) sequence)
+                   ((vector? sequence) (vector->list sequence))
+                   ((string? sequence) (string->list sequence))))
+  (define eot (if (pair? end)
+                  (car end)
+                  #f)) 
+  (list->vector (cons 2 (cons eot xs))))
+
+(define (peek vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (vector-ref vs (vector-ref vs 0))))
+
+(define (next vs)
+  (if (= (vector-ref vs 0) (vector-length vs))
+      (vector-ref vs 1)
+      (begin
+        (vector-set! vs 0 (+ 1 (vector-ref vs 0))) 
+        (vector-ref vs (- (vector-ref vs 0) 1)))))
+
+(define (word? sym)
+  (and (symbol? sym)
+       (not (member sym '(if endif define end)))))
+
+
+(define (test vs)
+  (parse-body (make-source vs)))
+
+; <Program> ::= <Articles> <Body> .
+
+(define (parse vs)
+  (let* ((src (make-source vs))
+         (articles (parse-articles src))
+         (body (parse-body src)))
+    (and (not (peek src)) `(,articles ,body))))
+         
+; <Articles> ::= <Article> <Articles> | .
+(define (parse-articles src)
+  (if (or (not (equal? (peek src) 'define)) (not (peek src)))
+      '()
+      (let* ((article (parse-article src))
+             (articles (parse-articles src)))
+        `(,article ,@articles))))
+
+; <Article> ::= define word <Body> end .
+(define (parse-article src)
+  (if (and (equal? (next src) 'define) (word? (peek src)))
+      (let* ((word (next src))
+             (body (parse-body src)))
+        `(,word ,body))
+      '()))
+             
+
+
+
+
+; <Body> ::= if <Body> endif <Body> | integer <Body> | word <Body> | .
+
+(define (parse-body src)
+  (cond ((equal? (peek src) 'if)
+         (let* ((_ (next src))
+                (body (parse-body src)))
+           `((if ,body) ,@(parse-body src))))
+        ((integer? (peek src))
+         `( ,(next src) ,@(parse-body src)))
+        ((word? (peek src))
+         `( ,(next src) ,@(parse-body src)))
+        ((or (not (peek src)) (equal? (peek src) 'endif) (equal? (peek src) 'end))
+         (let ((_ (next src)))
+           '()))
+        (else (break #f))))
+
+(parse #(x dup 0 swap if drop -1 endif))
+
+(parse #( define -- 1 - end
+define =0? dup 0 = end
+define =1? dup 1 = end
+define factorial
+=0? if drop 1 exit endif
+=1? if drop 1 exit endif
+dup --
+factorial
+*
+end
+0 factorial
+1 factorial
+2 factorial
+3 factorial
+4 factorial ))
