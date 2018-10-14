@@ -47,21 +47,6 @@ func isDiv(node *html.Node, class string) bool {
 }
 
 
-
-/*
-func readItem(item *html.Node) *Item {
-	if a := item.FirstChild; isElem(a, "a") {
-		if cs := getChildren(a); len(cs) == 2 && isElem(cs[0], "time") && isText(cs[1]) {
-			return &Item{
-				Ref:   getAttr(a, "href"),
-				Time:  getAttr(cs[0], "title"),
-				Title: cs[1].Data,
-			}
-		}
-	}
-	return nil
-}*/
-
 func recSearchForNode(node *html.Node, firstClass string, secondClass string) *html.Node {
 
 	if isDiv(node, firstClass) || isDiv(node, secondClass) {
@@ -79,9 +64,7 @@ func recSearchForNode(node *html.Node, firstClass string, secondClass string) *h
 func parseCBlock(node *html.Node) *Item {
 	var item Item
 
-	//card := getChildren(getChildren(getChildren(item)[1])[3])[1]
-	//fmt.Println(item.Attr)
-	title := recSearchForNode(node, "c-article-card__title", "c-post-preview__title")
+	title := recSearchForNode(node, "c-post-preview__title", "c-article-card__title")
 	img := recSearchForNode(node, "c-preview-pic", "c-article-card__pic")
 	lead := recSearchForNode(node, "c-post-preview__lead", "c-article-card__lead")
 
@@ -90,7 +73,6 @@ func parseCBlock(node *html.Node) *Item {
 	} else if isDiv(title, "c-post-preview__title") {
 		if cs := getChildren(title); len(cs) > 1 && isElem(cs[1], "a") {
 			a := cs[1]
-			//item.Ref = "drive2.ru" + getAttr(a, "href")
 			if ttl := a.FirstChild; ttl != nil {
 				item.Title = ttl.Data
 			}
@@ -100,7 +82,6 @@ func parseCBlock(node *html.Node) *Item {
 	if cs := getChildren(img); len(cs) > 1 && isElem(cs[1], "a"){
 		a := cs[1]
 		item.Ref = "https://drive2.ru" + getAttr(a, "href")
-		//fmt.Println(item.Ref)
 		if im := a.FirstChild; im != nil && isDiv(im, "o-img") {
 			if cs := getChildren(im); len(cs) >= 2 {
 				if imgLink := cs[1]; isElem(imgLink, "img"){
@@ -112,118 +93,117 @@ func parseCBlock(node *html.Node) *Item {
 
 	item.Preview = strings.TrimSpace(lead.FirstChild.Data)
 
-
 	if title != nil && lead != nil && img != nil {
+		item.Issue = downloadIssues(item.Ref)
 		return &item
 	}
 
-	//var ref, title, preview, image *html.Node
-
-	//for title == nil {}
-
-
-
-	/*
-	for !isDiv(card, "c-article-card") {
-		card = getChildren(card)[1]
-	}
-	fmt.Println(card)
-	//var ref, title, preview, image *html.Node
-	var title *html.Node
-	for c := card.FirstChild; c != nil; c = c.NextSibling {
-		if isDiv(c, "c-preview-pics"){
-			//image = c
-		} else if isDiv(c, "c-post-preview__title"){
-			title = c
-			//ref = c
-		} else if isDiv(c, "c-post-preview__lead"){
-			//preview = c
-		}
-	}
-	fmt.Println(title.FirstChild.Data)
-	*/
 	return nil
 }
 
 type Item struct {
 	Ref, Title, Preview, ImageRef string
-	//Issue *Issue
+	Issue []*Issue
 }
 
 type Issue struct {
-	Text, Image string
+	Type, Data string
 }
 
 
-func downloadNews() []*Item {
-	log.Info("sending request to drive2.ru")
-	if response, err := http.Get("http://drive2.ru"); err != nil {
-		log.Error("request to drive2.ru failed", "error", err)
+func downloadIssues(link string) []*Issue {
+	log.Info("sending request to " + link)
+	if response, err := http.Get(link); err != nil {
+		log.Error("request to " + link + " failed", "error", err)
 	} else {
 		defer response.Body.Close()
 		status := response.StatusCode
-		log.Info("got response from drive2.ru", "status", status)
+		log.Info("got response from " + link, "status", status)
 		if status == http.StatusOK {
 			if doc, err := html.Parse(response.Body); err != nil {
-				log.Error("invalid HTML from drive2.ru", "error", err)
+				log.Error("invalid HTML from " + link, "error", err)
 			} else {
-				log.Info("HTML from drive2.ru parsed successfully")
-				return search(doc)
+				log.Info("HTML from " + link + " parsed successfully")
+				return searchIssues(doc)
 			}
 		}
 	}
 	return nil
 }
 
-func search(node *html.Node) []*Item {
-	//var itemx []*Item
+func searchIssues(node *html.Node) []*Issue{
 
-	/*
-	if isDiv(node, "c-block"){
+	if isDiv(node, "c-post__body") {
+		var items []*Issue
+		for c := node.FirstChild.NextSibling.FirstChild; c != nil; c = c.NextSibling {
+			if isDiv(c, "c-post__pic") {
+				cd := c.FirstChild
+				var data string
+				if isElem(cd, "a"){
+					data = getAttr(cd, "href")
+				} else {
+					data = getAttr(cd.FirstChild.NextSibling, "src")
+				}
+				items = append(items, &Issue{
 
-		if set := getChildren(getChildren(node)[1]); len(set) > 0 {
-			for _, c := range set {
-				//fmt.Println(getAttr(c, "class"))
-				if isDiv(c, "c-block") {
-					fmt.Println(c.Attr)
+					Type: "img",
+					Data: data,
+				})
+			} else if isElem(c, "p") && len(getChildren(c)) != 0 {
+				if len(getChildren(c.FirstChild)) == 0 {
+					items = append(items, &Issue{
 
-					if item := parseCBlock(c); item != nil {
-						//log.Info(item.Title)
-						itemx = append(itemx, item)
-					}
+						Type: "txt",
+						Data: c.FirstChild.Data,
+					})
 				}
 			}
-			return itemx
 		}
+		return items
+	}
 
-		fmt.Println("lol")
-	} */
+
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		if items := searchIssues(c); items != nil {
+			return items
+		}
+	}
+	return nil
+}
+
+func downloadItems(link string) []*Item {
+	log.Info("sending request to " + link)
+	if response, err := http.Get(link); err != nil {
+		log.Error("request to " + link + " failed", "error", err)
+	} else {
+		defer response.Body.Close()
+		status := response.StatusCode
+		log.Info("got response from " + link, "status", status)
+		if status == http.StatusOK {
+			if doc, err := html.Parse(response.Body); err != nil {
+				log.Error("invalid HTML from " + link, "error", err)
+			} else {
+				log.Info("HTML from " + link + " parsed successfully")
+				return searchItems(doc, "l-page-main", "c-block")
+			}
+		}
+	}
+	return nil
+}
+
+func searchItems(node *html.Node, containerClass string, setClass string) []*Item {
 
 	/*
-		search не заходит в некоторые вершины (чередуется заходит/не заходит)
-		Нумерация "реальных" дочерних - нечетные числа
-
-		l-page - 3-й дочерний l-container
-		l-page-main - 1-й дочерний l-page-columns
-		getChildren(getChildren(node)[1]) - множество (массив?) всех статей
-	 */
+		searchItems не заходил в некоторые вершины (чередуется заходит/не заходит)
+		Связано с >1 классами некоторых div'ов
+		isDiv переработан, теперь проверяет принадлежность элемента к хотя бы одному классу
+	*/
 
 
-
-
-
-	/*
-	if isDiv(node, "l-page-columns"){
-		//fmt.Println(getChildren(node)[0].NextSibling.FirstChild.NextSibling.Attr)
-
-		fmt.Println(len(getChildren(getChildren(node)[1])))
-		//return nil
-	}*/
-
-	if isDiv(node, "l-page-main") {
+	if isDiv(node, containerClass) {
 		var items []*Item
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			if isDiv(c, "c-block") {
+			if isDiv(c, setClass) {
 				if item := parseCBlock(c); item != nil {
 					items = append(items, item)
 				}
@@ -234,7 +214,7 @@ func search(node *html.Node) []*Item {
 
 
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if items := search(c); items != nil {
+		if items := searchItems(c, containerClass, setClass); items != nil {
 			return items
 		}
 	}
@@ -243,23 +223,32 @@ func search(node *html.Node) []*Item {
 
 
 
+func writeSomeIssues(issues []*Issue){
+	for _, issue := range issues {
+		fmt.Println(issue.Data)
+		//log.Info(issue.Data)
+	}
+}
 
 
-//===================================================================================================
 
-
-func writeSomeItems(item *Item){
+func writeSomeItems(item *Item, writer func(issues []*Issue)){
+	/*
 	log.Info(item.Title)
 	log.Info(item.Ref)
 	log.Info(item.ImageRef)
 	log.Info(item.Preview)
 
 	log.Info("")
+	*/
 
 	fmt.Println(item.Title)
 	fmt.Println(item.Ref)
 	fmt.Println(item.ImageRef)
 	fmt.Println(item.Preview)
+	fmt.Println("---")
+
+	writer(item.Issue)
 
 	fmt.Println()
 }
@@ -269,14 +258,11 @@ func main() {
 
 
 	log.Info("Downloader started")
-	//var items []*Item
 
-	//downloadNews()
-
-	items := downloadNews()
+	items := downloadItems("http://drive2.ru")
 
 	for _, item := range items {
-		writeSomeItems(item)
+		writeSomeItems(item, writeSomeIssues)
 	}
 
 
