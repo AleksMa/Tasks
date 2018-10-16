@@ -69,6 +69,7 @@ func parseTextTag(node *html.Node) string {
 		if isElem(z, "br") {
 			acc += "\n"
 		} else if isElem(z, "b") || isElem(z, "i") {
+			//fmt.Println(z.FirstChild.Data)
 			acc += z.FirstChild.Data
 		} else if isElem(z, "a") {
 			acc += "https://www.drive2.ru"  + getAttr(z, "href")
@@ -170,14 +171,22 @@ func searchIssues(node *html.Node) []*Issue{
 					Type: "img",
 					Data: data,
 				})
-			} else if (isElem(c, "p") || isElem(c, "i")) && len(getChildren(c)) != 0 {
+			} else if (isElem(c, "p") || isElem(c, "i") || isElem(c, "b")) && len(getChildren(c)) != 0 {
 				data := parseTextTag(c)
-				if cd := c.FirstChild; len(getChildren(cd)) == 0 {
-					items = append(items, &Issue{
-						Type: "txt",
-						Data: data,
-					})
-				}
+				items = append(items, &Issue{
+					Type: "txt",
+					Data: data,
+				})
+			/*} else if isElem(c, "br"){
+				items = append(items, &Issue{
+					Type: "txt",
+					Data: "\n",
+				})*/
+			} else if len(c.Data) > 5 {
+				items = append(items, &Issue{
+					Type: "txt",
+					Data: c.Data,
+				})
 			}
 		}
 		return items
