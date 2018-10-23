@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drive2</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', serif;
+            font-size: 18px;
+        }
+    </style>
+    <style>
+        .nav {
+            width: 40%;
+            display: inline-block;
+        }
+
+        .block {
+            margin-left: 50px;
+        }
+    </style>
+</head>
+<body>
+<div padding="100px">
+{{range .}}
+    <div>
+        <h2 align="center">{{ .Title}}</h2>
+        <div  class="block">
+            <div class="nav">
+                <img width="100%"  src={{ .ImageRef}}> </img>
+            </div>
+
+            <div class="nav">
+            {{ .Preview}}
+                <a href={{ .Ref}}> Читать далее... </a>
+            </div>
+        </div>
+    </div>
+{{end}}
+</div>
+
+</body>
+</html>

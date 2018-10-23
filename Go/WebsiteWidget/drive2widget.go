@@ -1,15 +1,21 @@
 package main
 
 import (
-	"golang.org/x/net/html"
-	"github.com/mgutz/logxi/v1"
+
+	"fmt"
 	"net/http"
 	"strings"
-	"fmt"
+	"golang.org/x/net/html"
+	"github.com/mgutz/logxi/v1"
+	"html/template"
+	"github.com/mgutz/ansi"
 )
 
 func getChildren(node *html.Node) []*html.Node {
 	var children []*html.Node
+	if node == nil {
+		return children
+	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		children = append(children, c)
 	}
@@ -23,10 +29,6 @@ func getAttr(node *html.Node, key string) string {
 		}
 	}
 	return ""
-}
-
-func isText(node *html.Node) bool {
-	return node != nil && node.Type == html.TextNode
 }
 
 func isElem(node *html.Node, tag string) bool {
@@ -59,6 +61,23 @@ func recSearchForNode(node *html.Node, firstClass string, secondClass string) *h
 		}
 	}
 	return nil
+}
+
+
+func parseTextTag(node *html.Node) string {
+	acc := ""
+	for _, z := range getChildren(node) {
+		if isElem(z, "br") {
+			acc += "\n"
+		} else if isElem(z, "b") || isElem(z, "i") {
+			acc += z.FirstChild.Data
+		} else if isElem(z, "a") {
+			acc += "https://www.drive2.ru"  + getAttr(z, "href")
+		} else {
+			acc += z.Data
+		}
+	}
+	return acc
 }
 
 func parseCBlock(node *html.Node) *Item {
@@ -110,7 +129,6 @@ type Issue struct {
 	Type, Data string
 }
 
-
 func downloadIssues(link string) []*Issue {
 	log.Info("sending request to " + link)
 	if response, err := http.Get(link); err != nil {
@@ -141,22 +159,31 @@ func searchIssues(node *html.Node) []*Issue{
 				var data string
 				if isElem(cd, "a"){
 					data = getAttr(cd, "href")
-				} else {
+				} else if len(getChildren(cd)) > 1 && isElem(cd.FirstChild.NextSibling, "img"){
 					data = getAttr(cd.FirstChild.NextSibling, "src")
 				}
+				//COLOR
+				data = ansi.Color(data, "yellow")
 				items = append(items, &Issue{
-
 					Type: "img",
 					Data: data,
 				})
-			} else if isElem(c, "p") && len(getChildren(c)) != 0 {
-				if len(getChildren(c.FirstChild)) == 0 {
+			} else if (isElem(c, "p") || isElem(c, "i") || isElem(c, "b")) && len(getChildren(c)) != 0 {
+				data := parseTextTag(c)
+				items = append(items, &Issue{
+					Type: "txt",
+					Data: data,
+				})
+				/*} else if isElem(c, "br"){
 					items = append(items, &Issue{
-
 						Type: "txt",
-						Data: c.FirstChild.Data,
-					})
-				}
+						Data: "\n",
+					})*/
+			} else if len(c.Data) > 5 {
+				items = append(items, &Issue{
+					Type: "txt",
+					Data: c.Data,
+				})
 			}
 		}
 		return items
@@ -194,7 +221,7 @@ func downloadItems(link string) []*Item {
 func searchItems(node *html.Node, containerClass string, setClass string) []*Item {
 
 	/*
-		searchItems не заходил в некоторые вершины (чередуется заходит/не заходит)
+		searchItems не находил некоторые вершины по имени класса
 		Связано с >1 классами некоторых div'ов
 		isDiv переработан, теперь проверяет принадлежность элемента к хотя бы одному классу
 	*/
@@ -222,7 +249,6 @@ func searchItems(node *html.Node, containerClass string, setClass string) []*Ite
 }
 
 
-
 func writeSomeIssues(issues []*Issue){
 	for _, issue := range issues {
 		fmt.Println(issue.Data)
@@ -230,9 +256,7 @@ func writeSomeIssues(issues []*Issue){
 	}
 }
 
-
-
-func writeSomeItems(item *Item, writer func(issues []*Issue)){
+func writeSomeItems(item *Item){
 	/*
 	log.Info(item.Title)
 	log.Info(item.Ref)
@@ -246,24 +270,63 @@ func writeSomeItems(item *Item, writer func(issues []*Issue)){
 	fmt.Println(item.Ref)
 	fmt.Println(item.ImageRef)
 	fmt.Println(item.Preview)
-	fmt.Println("---")
+	fmt.Println("=========================================")
 
-	writer(item.Issue)
+	//writer(item.Issue)
 
 	fmt.Println()
 }
 
+func NewsWriter(w http.ResponseWriter, url string){
+
+	URLData := "http://drive2.ru"
+	items := downloadItems(URLData)
+
+
+	tmpl, _ := template.ParseFiles("index.html")
+	tmpl.Execute(w, items)
+
+}
+
+
+
+func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
+
+	r.ParseForm() //анализ аргументов,
+
+	fmt.Println(r.Form)  // ввод информации о форме на стороне сервера
+
+	fmt.Println("path", r.URL.Path)
+
+	fmt.Println("scheme", r.URL.Scheme)
+
+	fmt.Println(r.Form["url_long"])
+
+	for k, v := range r.Form {
+
+		fmt.Println("key:", k)
+
+		fmt.Println("val:", strings.Join(v, ""))
+
+	}
+
+	NewsWriter(w, r.URL.Path)
+
+
+}
+
+
 
 func main() {
 
+	http.HandleFunc("/", HomeRouterHandler) // установим роутер
 
-	log.Info("Downloader started")
+	err := http.ListenAndServe(":10053", nil) // задаем слушать порт
 
-	items := downloadItems("http://drive2.ru")
+	if err != nil {
 
-	for _, item := range items {
-		writeSomeItems(item, writeSomeIssues)
+		log.Fatal("ListenAndServe: ", err)
+
 	}
-
 
 }
