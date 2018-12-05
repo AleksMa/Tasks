@@ -5,12 +5,13 @@ import (
 	"os"
 
 	"golang.org/x/crypto/ssh"
-	"bytes"
+	//"bytes"
 
+	"bytes"
 )
 
 
-func executeCmd(cmd, hostname string, port string, config *ssh.ClientConfig) {
+func executeCmd(cmd string, hostname string, port string, config *ssh.ClientConfig) {
 	conn, _ := ssh.Dial("tcp", hostname+":" + port, config)
 	session, _ := conn.NewSession()
 	defer session.Close()
@@ -18,6 +19,8 @@ func executeCmd(cmd, hostname string, port string, config *ssh.ClientConfig) {
 	var stdoutBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
 	session.Run(cmd)
+	//b, _ := session.CombinedOutput(cmd)
+	//fmt.Println(string(b))
 
 	fmt.Println(stdoutBuf.String())
 }
@@ -26,7 +29,7 @@ func executeCmd(cmd, hostname string, port string, config *ssh.ClientConfig) {
 
 func main() {
 	cmd := os.Args[1]
-	hostname := "localhost"
+	hostname := "127.0.0.1"
 	port := "2222"
 
 	config := &ssh.ClientConfig{

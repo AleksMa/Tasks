@@ -18,7 +18,6 @@ func HomeRouterHandler2(w http.ResponseWriter, r *http.Request) {
 
 func HomeRouterHandlerStart(w http.ResponseWriter, r *http.Request) {
 
-	//fmt.Println(r.URL.Path[1:5])
 	if r.URL.Path == "/" {
 		http.ServeFile(w, r, "index.html")
 	}

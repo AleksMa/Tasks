@@ -7,32 +7,42 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"io"
 )
-func Handler(sess ssh.Session) {
+func Handler(s ssh.Session) {
 
-
-	term := terminal.NewTerminal(sess, "> ")
-	for {
-		line, err := term.ReadLine()
-		if err != nil {
-			break
-		}
-
-		cmd := exec.Command(line)
-
-		arr := strings.Split(line, " ")
-		if len(arr) > 1 {
-			cmd = exec.Command(arr[0], arr[1:]...)
-		}
-
-		res, err := cmd.Output()
-		if err != nil {
-			term.Write([]byte("bad command\n"))
-			continue
+	cmd := s.Command()
+	log.Println("Command handled: ", cmd)
+	if len(cmd) != 0 {
+		if out, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput(); err != nil {
+			io.WriteString(s, err.Error())
 		} else {
-			term.Write(res)
+			io.WriteString(s, string(out))
 		}
-		log.Println(line)
+	} else {
+		term := terminal.NewTerminal(s, "> ")
+		for {
+			line, err := term.ReadLine()
+			if err != nil {
+				break
+			}
+
+			cmd := exec.Command(line)
+
+			arr := strings.Split(line, " ")
+			if len(arr) > 1 {
+				cmd = exec.Command(arr[0], arr[1:]...)
+			}
+
+			res, err := cmd.Output()
+			if err != nil {
+				term.Write([]byte("bad command\n"))
+				continue
+			} else {
+				term.Write(res)
+			}
+			log.Println(line)
+		}
 	}
 
 	log.Println("terminal closed")

@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"os"
 	"time"
+	"strings"
 )
 
 type fullConfig struct {
@@ -26,10 +27,12 @@ func executeCmd(cmd string, config fullConfig) string {
 }
 
 func main() {
-	cmd := os.Args[1]
-	hosts := os.Args[2:]
-	results := make(chan string, 3)
-	timeout := time.After(5 * time.Second)
+	arg_len := len(os.Args)
+	t_cmd := os.Args[1:arg_len - 4]
+	cmd := strings.Join(t_cmd, " ")
+	hosts := os.Args[arg_len - 4:]
+	results := make(chan string, 4)
+	timeout := time.After(25 * time.Second)
 	configs := make(map[string]fullConfig)
 	configs["lab"] = fullConfig{
 		&ssh.ClientConfig{
@@ -61,6 +64,16 @@ func main() {
 		},
 		"151.248.113.144:443",
 	}
+	configs["localhost"] = fullConfig{
+		&ssh.ClientConfig{
+			User: "user",
+			Auth: []ssh.AuthMethod{
+				ssh.Password("12345678990"),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		},
+		"127.0.0.1:2222",
+	}
 
 	for _, hostname := range hosts {
 		go func(hostname string) {
@@ -74,6 +87,7 @@ func main() {
 		case res := <-results:
 			fmt.Print(res)
 		case <-timeout:
+			fmt.Println("Time limit!")
 			return
 		}
 	}
