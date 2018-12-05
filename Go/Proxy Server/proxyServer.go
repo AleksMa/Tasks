@@ -12,6 +12,15 @@ import (
 
 var CurrentUrl string
 
+func makeCurrentLink(proto string, path string){
+	ending := strings.Index(path, "/")
+	if ending > 0 {
+		CurrentUrl = proto + path[0:strings.Index(path, "/")]
+	} else {
+		CurrentUrl = proto + path[0:]
+	}
+}
+
 func serveWebsite(w http.ResponseWriter, url string){
 
 	resp, _ := http.Get(url)
@@ -56,12 +65,7 @@ func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(path)
 		//fmt.Fprintf(w, r.URL.Path[7:])
 		serveWebsite(w, "https://"+path)
-		ending := strings.Index(path, "/")
-		if ending > 0 {
-			CurrentUrl = "https://" + path[0:strings.Index(path, "/")]
-		} else {
-			CurrentUrl = "https://" + path[0:]
-		}
+		makeCurrentLink("https://", path)
 		fmt.Println(CurrentUrl)
 	} else if strings.HasPrefix(r.URL.Path, "/http/") {
 		fmt.Println("/http")
@@ -69,12 +73,7 @@ func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(path)
 		//fmt.Fprintf(w, r.URL.Path[6:])
 		serveWebsite(w, "http://"+path)
-		ending := strings.Index(path, "/")
-		if ending > 0 {
-			CurrentUrl = "https://" + path[0:strings.Index(path, "/")]
-		} else {
-			CurrentUrl = "https://" + path[0:]
-		}
+		makeCurrentLink("http://", path)
 		fmt.Println(CurrentUrl)
 	} else {
 		fmt.Println(CurrentUrl)
@@ -94,12 +93,7 @@ func HomeRouterHandler2(w http.ResponseWriter, r *http.Request) {
 	} else {
 		t := strings.Index(yourUrl, "//")
 		ts := yourUrl[t + 2:]
-		ending := strings.Index(ts, "/")
-		if ending > 0 {
-			CurrentUrl = yourUrl[0:t] + "//" + ts[0:ending]
-		} else {
-			CurrentUrl = yourUrl[0:t] + "//" + ts[0:]
-		}
+		makeCurrentLink(yourUrl[0:t] + "//", ts)
 	}
 
 
