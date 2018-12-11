@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"time"
 	"fmt"
+	"strings"
+	"html/template"
 )
 
 type fullConfig struct {
@@ -15,10 +17,22 @@ type fullConfig struct {
 	addr   string
 }
 
-func runSSH(url string){
+type tracerouteList struct {
+	ServerName string
+	Nodes      []string
+}
+
+type resultStruct struct {
+	Url string
+	Tll []tracerouteList
+}
+
+func runSSH(url string) []tracerouteList{
 	cmd := "traceroute " + url
-	results := make(chan string, 4)
-	timeout := time.After(25 * time.Second)
+	results := make(chan tracerouteList, 4)
+	timeout := time.After(5 * time.Second)
+	var resultList []tracerouteList
+
 
 	configs := []fullConfig{
 		{
@@ -53,6 +67,10 @@ func runSSH(url string){
 		},
 		{
 			&ssh.ClientConfig{
+				User: "user",
+				Auth: []ssh.AuthMethod{
+					ssh.Password("12345678990"),
+				},
 				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			},
 			"127.0.0.1:2222",
@@ -68,25 +86,35 @@ func runSSH(url string){
 	for i := 0; i < len(configs); i++ {
 		select {
 		case res := <-results:
-			fmt.Print(res)
+			resultList = append(resultList, res)
+			/*fmt.Println(res.ServerName)
+			for _, node := range  res.Nodes{
+				fmt.Println(node)
+			}
+			fmt.Println()*/
 		case <-timeout:
 			fmt.Println("Time limit!")
-			return
+			return resultList
 		}
 	}
+	return resultList
 }
 
-func executeCmd(cmd string, config fullConfig) string {
+func executeCmd(cmd string, config fullConfig) tracerouteList {
 	conn, _ := ssh.Dial("tcp", config.addr, config.config)
 	session, _ := conn.NewSession()
 	defer session.Close()
 
 	var stdoutBuf bytes.Buffer
+	var tList tracerouteList
+	tList.ServerName = config.addr
 	session.Stdout = &stdoutBuf
 	session.Run(cmd)
-
-	return config.addr + "# " + cmd + ":\n" + stdoutBuf.String() + "=================\n"
+	tList.Nodes = strings.Split(stdoutBuf.String(), "\n")
+	return tList
 }
+
+
 
 func HomeRouterHandler2(w http.ResponseWriter, r *http.Request) {
 
@@ -95,7 +123,14 @@ func HomeRouterHandler2(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Fprint(w, argUrl)
 
-	runSSH(argUrl)
+	var result resultStruct
+	result.Url = argUrl
+	result.Tll = runSSH(argUrl)
+
+	tmpl, _ := template.ParseFiles("trace_table.html")
+	tmpl.Execute(w, result)
+
+	fmt.Println(result)
 
 }
 
