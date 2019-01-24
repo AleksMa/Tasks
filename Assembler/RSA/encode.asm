@@ -3,7 +3,7 @@ entry start
 
 include 'C:\fasmw17304\INCLUDE\win32a.inc'
 
-BUFFER_SIZE     EQU 257
+BUFFER_SIZE     = 257
 
 section '.data' data readable writeable
         num1 db BUFFER_SIZE dup(?)
@@ -11,12 +11,10 @@ section '.data' data readable writeable
         res db BUFFER_SIZE dup(0)
         temp db BUFFER_SIZE dup(0)
         modul db BUFFER_SIZE dup(?)
-        outp db BUFFER_SIZE dup(?)
-        outSize dd BUFFER_SIZE
 
-        num1FileName db 'C:\RSA\c.txt',0
-        num2FileName db 'C:\RSA\d.txt',0
-        resFileName db 'C:\RSA\menc.txt',0
+        num1FileName db 'C:\RSA\m.txt',0
+        num2FileName db 'C:\RSA\e.txt',0
+        resFileName db 'C:\RSA\c.txt',0
         modFileName db 'C:\RSA\mod.txt',0
 
         lpBytesNum1 dd ?
@@ -26,14 +24,11 @@ section '.data' data readable writeable
         hFile dd ?
 
 section '.code' code readable executable
-
         proc OpenAndRead, fn, buf, bufSize, bytesRead
              push    eax
-             ;Создает/открывает файл, кидает в еах хендл
              invoke CreateFile, [fn], GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0
              mov [hFile], eax
 
-             ;Читает из файла в массив
              invoke ReadFile, [hFile], [buf], [bufSize], [bytesRead], 0
              invoke CloseHandle, [hFile]
 
@@ -46,13 +41,39 @@ section '.code' code readable executable
              invoke CreateFile, [fn], GENERIC_WRITE, FILE_SHARE_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0
              mov [hFile], eax
 
-             ;Читает из массива в файл
              invoke WriteFile, [hFile], [buf], [bufSize], [bytesRead], 0
              invoke CloseHandle, [hFile]
 
              pop     eax
              ret
         endp
+
+        ; Прибавление байта (для суммы)
+        proc ByteAdd, res, numberLen, add_byte
+             push eax edi ecx
+             pushf
+             cld
+             clc
+             mov ah, byte[add_byte]
+ 
+             mov ecx, [numberLen]
+             mov edi, [res]
+             .loop:
+                mov al, ah
+                add al, [edi]
+                jc .over
+                stosb
+                jmp .end
+             .over:
+                mov ah, 1
+                stosb
+             loop .loop
+             .end:
+                popf
+                pop ecx edi eax
+             ret
+        endp
+
 
         ;Сумма
 
@@ -87,7 +108,7 @@ section '.code' code readable executable
              ret
         endp
 
-        ; СДВИГ ВЛЕВО  (*2)
+        ; СДВИГ ВЛЕВО  *2
 
        proc ShiftLeft, number, numberLen
              push esi ecx eax
@@ -120,7 +141,7 @@ section '.code' code readable executable
         proc TrueSub, number1, number2, result, numberLen
         pusha
 
-        mov cx, 0
+        xor cx, cx
         sub1:
                 mov eax, [numberLen]
                 cmp cx, ax
@@ -156,8 +177,8 @@ section '.code' code readable executable
                 inc [number1]
                 inc [number2]
                 inc [result]
-
                 jmp sub1
+
                 sub2:
                 mov ax, 1d
                 jmp sub_lbl1
@@ -199,6 +220,7 @@ section '.code' code readable executable
                     mov al, [edi]
  
                     mov bx, 1
+
                     shl bx, cl
                     shr bx, 1
                     test ax, bx
@@ -229,7 +251,7 @@ section '.code' code readable executable
  
         endp
 
-        ;Вычет по модулю number от modulus
+        ;Остаток по модулю number от modulus
 
         proc Remodulate, number, numberLen, modulus
              pusha
@@ -242,28 +264,6 @@ section '.code' code readable executable
              .exit:
              popa
              ret
-        endp
-
-        ;Удаление незначащих нулей с конца (мы же в LE)
-
-        proc RemoveNils number, numberLen
-            pusha
-            mov edi, [number]
-            mov ecx, [numberLen]
-            add edi, ecx
-            dec edi
-            .go_destroy:
-                cmp ecx, 1
-                je .exit_destroy
-                cmp [edi], BYTE 0
-                jne .exit_destroy
-                dec [outSize]
-                dec edi
-                dec ecx
-                jmp .go_destroy
-            .exit_destroy:
-            popa
-            ret
         endp
 
         proc SetArray array, numberLen, val
@@ -301,14 +301,11 @@ section '.code' code readable executable
 
            push eax edi ecx
              pushf
-
              mov ecx, [numberLen]
              mov edi, [number2]
              add edi, [numberLen]
              dec edi
              mov [res], 1
-
-
  
              .loop:
                 cmp ecx, 0
@@ -344,9 +341,6 @@ section '.code' code readable executable
  
              popf
              pop ecx edi eax
-
-             stdcall RemoveNils, [result], BUFFER_SIZE
-
              ret
 
 
@@ -376,37 +370,15 @@ section '.code' code readable executable
                 dec esi
              loop .loop
              .end_false:
-             mov eax, 00h
+             mov eax, 0
              jmp .exit
              .end_true:
-             mov eax, 01h
+             mov eax, 1
              .exit:
              popf
              pop ebx ecx esi edi
              ret
         endp
-
-        proc Len, number, numberLen
-             push edi esi ecx ebx
-             pushf
-             mov eax, [numberLen]
-             mov edi, [number]
-             add edi, [numberLen]
-             dec edi
-             .loop:
-                mov bl, [edi]
-                cmp bl, 0
-                jne .exit_loop
-                dec edi
-                dec eax
-             jmp .loop
-             .exit_loop:
-             popf
-             pop ebx ecx esi edi
-        ret
-        endp
-
-
 
         start:
              stdcall OpenAndRead, num1FileName, num1, BUFFER_SIZE, lpBytesNum1
@@ -416,7 +388,7 @@ section '.code' code readable executable
 
              stdcall ModularExponentiation, num1, num2, res, BUFFER_SIZE, modul, temp
 
-             stdcall OpenAndWrite, resFileName, res, [outSize], lpBytesRes
+             stdcall OpenAndWrite, resFileName, res, BUFFER_SIZE, lpBytesRes
              invoke ExitProcess, 0
 
 section '.idata' import data readable writeable
