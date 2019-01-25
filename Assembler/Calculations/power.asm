@@ -1,4 +1,4 @@
-MAX_PATH EQU 255
+MAX_PATH EQU 255 
 N = 0
 N2 = 0
 
