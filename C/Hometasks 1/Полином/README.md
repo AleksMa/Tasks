@@ -9,24 +9,25 @@
 <img src="http://195.19.40.181:3386/tasks/iu9/algorithms_and_data_structures.3/clang/polynom/text/polynom9x.png" alt="scheme"><br>
 Для вычисления значения производной полинома необходимо очевидным образом модифицировать схему Горнера.<br>
 Примеры работы программы:</p>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>№№</th>
-<th>Ввод</th>
-<th>Вывод</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>1</td>
-<td></td>
-</tr>
-</tbody>
+<table class="tg">
+  <tr>
+    <th class="tg-0pky">№№</th>
+    <th class="tg-0pky">Ввод</th>
+    <th class="tg-0pky">Вывод</th>
+  </tr>
+  <tr>
+    <td class="tg-0pky">1</td>
+    <td class="tg-0pky">1<br>10<br>2 3</td>
+    <td class="tg-0pky">23 2</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky">2</td>
+    <td class="tg-0pky">4<br>2<br>3 2 -5 1 -4<br></td>
+    <td class="tg-0pky">42 101</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky"></td>
+    <td class="tg-0pky"></td>
+    <td class="tg-0pky"></td>
+  </tr>
 </table>
-<p>10<br>
-2 3 | 23 2<br>
-2 | 4<br>
-2<br>
-3 2 -5 1 -4 | 42 101</p>
