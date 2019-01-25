@@ -25,9 +25,4 @@
     <td class="tg-0pky">4<br>2<br>3 2 -5 1 -4<br></td>
     <td class="tg-0pky">42 101</td>
   </tr>
-  <tr>
-    <td class="tg-0pky"></td>
-    <td class="tg-0pky"></td>
-    <td class="tg-0pky"></td>
-  </tr>
 </table>
