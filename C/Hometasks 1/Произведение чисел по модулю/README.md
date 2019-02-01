@@ -13,31 +13,25 @@
 <em>(x ⋅ y) mod m  ≡ ((x mod  m ) ⋅ (y mod m )) mod m,</em><br>
 мы имеем право при вычислении правой части формулы 1 поступать следующим образом: если есть возможность того, что сумма двух слагаемых превзойдёт 2<sup>64</sup>, нужно складывать остатки от деления этих слагаемых на m; аналогично для произведения. Этот приём даёт гарантию того, что при вычислении ни разу не произойдёт переполнение.<br>
 Примеры работы программы:<br>
-&lt;style type=“text/css”&gt;<br>
-.tg  {border-collapse:collapse;border-spacing:0;}<br>
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}<br>
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}<br>
-.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}<br>
-&lt;/style&gt;<br>
-&lt;table class=“tg”&gt;<br>
-&lt;tr&gt;<br>
-&lt;th class=“tg-0pky”&gt;№№&lt;/th&gt;<br>
-&lt;th class=“tg-0pky”&gt;Ввод&lt;/th&gt;<br>
-&lt;th class=“tg-0pky”&gt;Вывод&lt;/th&gt;<br>
-&lt;/tr&gt;<br>
-&lt;tr&gt;<br>
-&lt;td class=“tg-0pky”&gt;1&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;25 8&lt;br&gt;3&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;2&lt;/td&gt;<br>
-&lt;/tr&gt;<br>
-&lt;tr&gt;<br>
-&lt;td class=“tg-0pky”&gt;2&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;1000000000000 2000000000000 &lt;br&gt;7000000000000&lt;br&gt;&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;2000000000000&lt;/td&gt;<br>
-&lt;/tr&gt;<br>
-&lt;tr&gt;<br>
-&lt;td class=“tg-0pky”&gt;&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;&lt;/td&gt;<br>
-&lt;td class=“tg-0pky”&gt;&lt;/td&gt;<br>
-&lt;/tr&gt;<br>
-&lt;/table&gt;</p>
+<table>
+  <tr>
+    <th class="tg-0pky">№№</th>
+    <th class="tg-0pky">Ввод</th>
+    <th class="tg-0pky">Вывод</th>
+  </tr>
+  <tr>
+    <td class="tg-0pky">1</td>
+    <td class="tg-0pky">25 8<br>3</td>
+    <td class="tg-0pky">2</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky">2</td>
+    <td class="tg-0pky">1000000000000 2000000000000 <br>7000000000000<br></td>
+    <td class="tg-0pky">2000000000000</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky"></td>
+    <td class="tg-0pky"></td>
+    <td class="tg-0pky"></td>
+  </tr>
+</table>
