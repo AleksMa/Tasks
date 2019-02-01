@@ -2,7 +2,7 @@
 Программа должна считывать из стандартного потока ввода числа <em>a</em>, <em>b</em> и <em>m</em> и выводить результат в стандартный поток вывода.<br>
 Основная сложность этой задачи заключается в том, что произведение <em>a</em> на <em>b</em> может превышать 2<sup>64</sup> и, тем самым, не помещаться ни в один из целочисленных типов данных языка C. При этом представление формулы в виде <em>((a mod  m ) ⋅ (b mod m )) mod m</em> тоже не решает проблемы, так как при больших значениях m произведение <em>(a mod  m ) ⋅ (b mod m )</em> тоже может превышать 2<sup>64</sup>.<br>
 Решение этой задачи сводится к вычислению значения полинома по схеме Горнера. Представим число b в двоичной системе счисления:<br>
-<img src="http://195.19.40.181:3386/tasks/iu9/algorithms_and_data_structures.3/clang/mulmod/text/mulmod17x.png" alt="digits">   Здесь <em>b<sub>63</sub>,b<sub>62</sub>, …,b<sub>1</sub>,b<sub>0</sub></em> – двоичные разряды, формирующие число, то есть<br>
+<img src="http://195.19.40.181:3386/tasks/iu9/algorithms_and_data_structures.3/clang/mulmod/text/mulmod17x.png" alt="digits"> &emsp;   Здесь <em>b<sub>63</sub>,b<sub>62</sub>, …,b<sub>1</sub>,b<sub>0</sub></em> – двоичные разряды, формирующие число, то есть<br>
 <em>b = b<sub>63</sub> ⋅ 2<sup>63</sup> + b<sub>62</sub> ⋅ 2<sup>62</sup> + …+ b<sub>1</sub> ⋅ 2 + b<sub>0</sub></em>.<br>
 Тогда<br>
 <img src="http://195.19.40.181:3386/tasks/iu9/algorithms_and_data_structures.3/clang/mulmod/text/mulmod17x.png" alt="equ"><br>
