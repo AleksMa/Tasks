@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 typedef struct Task{
     int low, high;
@@ -99,4 +100,3 @@ int main(){
     free(array);
     return 0;
 }
-
