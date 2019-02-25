@@ -10,17 +10,17 @@
 
 Примеры вызова процедур:
 
->(my-range  0 11 3) ⇒ (0 3 6 9)
+>(my-range  0 11 3) ⇒ (0 3 6 9)  
 
->(my-flatten '((1) 2 (3 (4 5)) 6)) ⇒ (1 2 3 4 5 6)
+>(my-flatten '((1) 2 (3 (4 5)) 6)) ⇒ (1 2 3 4 5 6)  
 
->(my-element? 1 '(3 2 1)) ⇒ #t 
->(my-element? 4 '(3 2 1)) ⇒ #f
+>(my-element? 1 '(3 2 1)) ⇒ #t   
+>(my-element? 4 '(3 2 1)) ⇒ #f  
 
 >(my-filter odd? (my-range 0 10 1)) 
-  ⇒ (1 3 5 7 9)
+  ⇒ (1 3 5 7 9)  
 >(my-filter (lambda (x) (= (remainder x 3) 0)) (my-range 0 13 1)) 
-  ⇒ (0 3 6 9 12)
+  ⇒ (0 3 6 9 12)  
 
->(my-fold-left  quotient '(16 2 2 2 2)) ⇒ 1
->(my-fold-right expt     '(2 3 4))      ⇒ 2417851639229258349412352
+>(my-fold-left  quotient '(16 2 2 2 2)) ⇒ 1  
+>(my-fold-right expt     '(2 3 4))      ⇒ 2417851639229258349412352  
