@@ -12,18 +12,18 @@
 > (string-trim-left  "\t\tabc def")   ⇒ "abc def"   
 > (string-trim-right "abc def\t")     ⇒ "abc def"   
 > (string-trim       "\t abc def \n") ⇒ "abc def"  
->  
+   
 > (string-prefix? "abc" "abcdef")  ⇒ #t   
 > (string-prefix? "bcd" "abcdef")  ⇒ #f  
-> 
+     
 > (string-suffix? "def" "abcdef")  ⇒ #t   
 > (string-suffix? "bcd" "abcdef") ⇒ #f  
-
+  
 > (string-infix? "def" "abcdefgh") ⇒ #t   
 > (string-infix? "abc" "abcdefgh") ⇒ #t   
 > (string-infix? "fgh" "abcdefgh") ⇒ #t   
 > (string-infix? "ijk" "abcdefgh") ⇒ #f  
-> 
+   
 > (string-split "x;y;z" ";")       ⇒ ("x" "y" "z")   
 > (string-split "x-->y-->z" "-->") ⇒ ("x" "y" "z")  
 
