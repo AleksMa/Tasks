@@ -4,14 +4,14 @@
 #include <iostream> 
 using namespace std;
 
-float a = 1, b = 0.2;
+GLfloat a = 1.0f, b = 0.2f;
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	if (key == GLFW_KEY_RIGHT/* && action == GLFW_PRESS*/) {
-		float c = a;
+	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+		GLfloat c = a;
 		a = b;
 		b = c;
 	}
@@ -19,26 +19,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main() {
 
-	if (!glfwInit()) {
-		cout << "Failed to initialize GLFW" << endl;
-		return -1;
-	}
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	glfwInit();
+	//glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Simple example", nullptr, nullptr);
-	if (!window) {
-		cout << "Failed to create GLFW window" << endl;
-		glfwTerminate();
-		return -1;
-	}
+	GLFWwindow* window = glfwCreateWindow(800, 600, "FirstLab", NULL, NULL);
 	glfwMakeContextCurrent(window);
 
 	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) {
-		cout << "Failed to initialize GLEW" << endl;
-		glfwTerminate();
-		return -1;
-	}
+	glewInit();
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -46,8 +34,29 @@ int main() {
 	glViewport(0, 0, width, height);
 
 	while (!glfwWindowShouldClose(window)) {
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		int width, height;
+
 		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+
+		float ratio;
+		glfwGetFramebufferSize(window, &width, &height);
+		
+		ratio = width / (float)height;
+		glViewport(0, 0, width, height);
+
+
+		
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+		glMatrixMode(GL_MODELVIEW);
+
+		
+		glLoadIdentity();
+		glRotatef((float)glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
+		
 
 		glPointSize(1.0);
 		glBegin(GL_POLYGON);
