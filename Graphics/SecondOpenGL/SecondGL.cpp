@@ -45,29 +45,10 @@ GLFWwindow* initWindow(const int resX, const int resY)
 
 void drawCube()
 {
-	GLfloat vertices[] =
-	{
-		-1, -1, -1,   -1, -1,  1,   -1,  1,  1,   -1,  1, -1,
-		1, -1, -1,    1, -1,  1,    1,  1,  1,    1,  1, -1,
-		-1, -1, -1,   -1, -1,  1,    1, -1,  1,    1, -1, -1,
-		-1,  1, -1,   -1,  1,  1,    1,  1,  1,    1,  1, -1,
-		-1, -1, -1,   -1,  1, -1,    1,  1, -1,    1, -1, -1,
-		-1, -1,  1,   -1,  1,  1,    1,  1,  1,    1, -1,  1
-	};
-
-	GLfloat colors[] =
-	{
-		0, 0, 0,   0, 0, 1,   0, 1, 1,   0, 1, 0,
-		1, 0, 0,   1, 0, 1,   1, 1, 1,   1, 1, 0,
-		0, 0, 0,   0, 0, 1,   1, 0, 1,   1, 0, 0,
-		0, 1, 0,   0, 1, 1,   1, 1, 1,   1, 1, 0,
-		0, 0, 0,   0, 1, 0,   1, 1, 0,   1, 0, 0,
-		0, 0, 1,   0, 1, 1,   1, 1, 1,   1, 0, 1
-	};
 
 	static float alpha = 0;
 	//attempt to rotate cube
-	glRotatef(alpha, 1, 1, 0);
+	glRotatef(alpha, 1, 0, 0);
 
 	GLfloat r = 1.f;
 	GLfloat g = 0.f;
@@ -78,7 +59,7 @@ void drawCube()
 	const int type = GL_POLYGON;
 
 	GLfloat size = 0.5f;
-	GLfloat offset = 0.5f;
+	GLfloat offset = 0;
 
 	glLineWidth(2.0);
 	glBegin(type);
@@ -155,20 +136,24 @@ void drawCube()
 void drawStaticCube() {
 	const int type = GL_POLYGON;
 
+	//static float alpha = 0;
+	//attempt to rotate cube
+	//glRotatef(alpha, 0, 0, 1);
+
 	GLfloat r = 1.f;
 	GLfloat g = 0.f;
 	GLfloat b = 0.f;
 
-	GLfloat size = 0.1f;
-	GLfloat offset = -0.5f;
+	GLfloat size = 0.2f;
+	GLfloat offset = -1.5f;
 
 	glLineWidth(2.0);
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(size, -size, size);
-	glVertex3f(-size, -size, size);
-	glVertex3f(-size, size, size);
-	glVertex3f(size, size, size);
+	glVertex3f(size + offset, -size + offset, size);
+	glVertex3f(-size + offset, -size + offset, size);
+	glVertex3f(-size + offset, size + offset, size);
+	glVertex3f(size + offset, size + offset, size);
 	glEnd();
 
 
@@ -179,10 +164,10 @@ void drawStaticCube() {
 	b = 0.f;
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(size, -size, -size);
-	glVertex3f(-size, -size, -size);
-	glVertex3f(-size, size, -size);
-	glVertex3f(size, size, -size);
+	glVertex3f(size + offset, -size + offset, -size);
+	glVertex3f(-size + offset, -size + offset, -size);
+	glVertex3f(-size + offset, size + offset, -size);
+	glVertex3f(size + offset, size + offset, -size);
 	glEnd();
 
 
@@ -192,10 +177,10 @@ void drawStaticCube() {
 	b = 1.f;
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(size, -size, -size);
-	glVertex3f(size, -size, size);
-	glVertex3f(size, size, size);
-	glVertex3f(size, size, -size);
+	glVertex3f(size + offset, -size + offset, -size);
+	glVertex3f(size + offset, -size + offset, size);
+	glVertex3f(size + offset, size + offset, size);
+	glVertex3f(size + offset, size + offset, -size);
 	glEnd();
 
 	r = 0.99f;
@@ -203,10 +188,10 @@ void drawStaticCube() {
 	b = 0.01f;
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(-size, -size, -size);
-	glVertex3f(-size, -size, size);
-	glVertex3f(-size, size, size);
-	glVertex3f(-size, size, -size);
+	glVertex3f(-size + offset, -size + offset, -size);
+	glVertex3f(-size + offset, -size + offset, size);
+	glVertex3f(-size + offset, size + offset, size);
+	glVertex3f(-size + offset, size + offset, -size);
 	glEnd();
 
 	r = 0.5f;
@@ -214,10 +199,10 @@ void drawStaticCube() {
 	b = 0.5f;
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(-size, size, -size);
-	glVertex3f(-size, size, size);
-	glVertex3f(size, size, size);
-	glVertex3f(size, size, -size);
+	glVertex3f(-size + offset, size + offset, -size);
+	glVertex3f(-size + offset, size + offset, size);
+	glVertex3f(size + offset, size + offset, size);
+	glVertex3f(size + offset, size + offset, -size);
 	glEnd();
 
 	r = 1.f;
@@ -225,11 +210,13 @@ void drawStaticCube() {
 	b = 0.8f;
 	glBegin(type);
 	glColor3f(r, g, b);
-	glVertex3f(-size, -size, -size);
-	glVertex3f(-size, -size, size);
-	glVertex3f(size, -size, size);
-	glVertex3f(size, -size, -size);
+	glVertex3f(-size + offset, -size + offset, -size);
+	glVertex3f(-size + offset, -size + offset, size);
+	glVertex3f(size + offset, -size + offset, size);
+	glVertex3f(size + offset, -size + offset, -size);
 	glEnd();
+
+	//alpha += 0.2;
 }
 
 void display(GLFWwindow* window)
@@ -247,10 +234,15 @@ void display(GLFWwindow* window)
 
 		glMatrixMode(GL_PROJECTION_MATRIX);
 		glLoadIdentity();
+		
+		//glOrtho(-1.f, 1.f, -1.f, 1.f, 1.f, -1.f);
+		
 		gluPerspective(50, (double)windowWidth / (double)windowHeight, 0.1, 100);
 
 		glMatrixMode(GL_MODELVIEW_MATRIX);
 		glTranslatef(0, 0, -5);
+
+		drawStaticCube();
 
 		drawCube();
 
@@ -264,7 +256,7 @@ void display(GLFWwindow* window)
 
 int main(int argc, char** argv)
 {
-	GLFWwindow* window = initWindow(1024, 620);
+	GLFWwindow* window = initWindow(800, 600);
 	if (NULL != window)
 	{
 		display(window);
