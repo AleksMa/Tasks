@@ -7,6 +7,13 @@ GLfloat a = 0.f, b = 0.f, c = 0.f;
 GLfloat x = 0.f, y = 0.f, z = 0.f;
 GLboolean  fl = true;
 
+
+GLint N = 5;
+GLint M = 20;
+GLint radius = 100;
+
+void makeSphere(GLint radius);
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
 	int mods) {
 	if (action == GLFW_PRESS) {
@@ -14,6 +21,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action,
 
 		if (key == GLFW_KEY_ENTER || key == GLFW_KEY_SPACE)
 			fl = !fl;
+
+		if (key == GLFW_KEY_EQUAL) {
+			N += 1;
+			M += 5;
+			makeSphere(radius);
+		}
+		if (key == GLFW_KEY_MINUS) {
+			if (N > 1)
+				N -= 1;
+			if (M > 1)
+				M -= 5;
+			makeSphere(radius);
+		}
 	}
 
 	if (action = GLFW_REPEAT) {
@@ -74,6 +94,7 @@ GLfloat project[] = {
 
 void drawCube(GLFWwindow* window) {
 	static float alpha = 0;
+
 
 	glTranslatef(x, y, z);
 
@@ -242,9 +263,6 @@ void drawStaticCube(GLFWwindow* window) {
 
 
 
-int N = 5;
-int M = 20;
-int radius = 100;
 
 vector <struct Point> Vertices;
 
@@ -253,15 +271,18 @@ struct Point {
 	Point(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) {};
 };
 
+GLfloat A = 1.5, B = 1, C = 1.7;
+
 
 void makeSphere(GLint r) {
 	const GLdouble pi = 3.14159265358979323846;
-	Vertices.push_back(Point(0.f, r, 0.f));
+	Vertices.clear();
+	Vertices.push_back(Point(0.f, B * r, 0.f));
 	for (int i = N - 1; i >= 0; i--) {
 		GLfloat y = r * i / N;
 		GLfloat radius = sqrt(static_cast<GLfloat>(r*r) - (y*y));
 		for (int j = 0; j < M; j++) {
-			Vertices.push_back(Point(radius * cos(j * pi * 2 / M), y, radius * sin(j * pi * 2 / M)));
+			Vertices.push_back(Point(A * radius * cos(j * pi * 2 / M),  B * y, C * radius * sin(j * pi * 2 / M)));
 			//Vertices.push_back(Point(radius * cos(j * pi * 2 / M), - radius / M * i, radius * sin(j * pi * 2 / M)));
 		}
 	}
@@ -270,50 +291,69 @@ void makeSphere(GLint r) {
 		GLfloat y = r * i / N;
 		GLfloat radius = sqrt(static_cast<GLfloat>(r*r) - (y*y));
 		for (int j = 0; j < M; j++) {
-			Vertices.push_back(Point(radius * cos(j * pi * 2 / M), -y, radius * sin(j * pi * 2 / M)));
+			Vertices.push_back(Point(A * radius * cos(j * pi * 2 / M), B * -y, C * radius * sin(j * pi * 2 / M)));
 		}
 	}
 
-	Vertices.push_back(Point(0.f, -r, 0.f));
+	Vertices.push_back(Point(0.f, B * -r, 0.f));
 }
 
 void drawMySphere(GLint radius) {
+
+	static float alpha = 0;
+
+	glTranslatef(x, y, z);
+
+	glRotatef(a, 1, 0, 0);
+	glRotatef(b, 0, 1, 0);
+	glRotatef(c, 0, 0, 1);
+
+	glTranslatef(-x, -y, -z);
+
+	GLfloat r = 1.f;
+	GLfloat g = 0.f;
+	GLfloat b = 0.f;
+
+	const int type = (fl ? GL_POLYGON : GL_LINE_LOOP);
+
+
+
 	glColor3f(0.f, 1.f, 0.f);
 	glLineWidth(1);
 
 
 	for (int i = 0; i < M; i++) {
-		glBegin(GL_LINE_LOOP);
+		glBegin(type);
 		Point p = Vertices[0];
 		Point p1 = Vertices[i + 1], p2 = Vertices[(i == M - 1 ? 1 : i + 2)];
-		glVertex3f(p.x, p.y, p.z);
-		glVertex3f(p1.x, p1.y, p1.z);
-		glVertex3f(p2.x, p2.y, p2.z);
+		glVertex3f(p.x + x, p.y + y, p.z + z);
+		glVertex3f(p1.x + x, p1.y + y, p1.z + z);
+		glVertex3f(p2.x + x, p2.y + y, p2.z + z);
 		glEnd();
 	}
 
-
+	
 
 	for (int i = 0; i < 2 * N - 1; i++) {
 		for (int j = 0; j < M; j++) {
-			glBegin(GL_LINE_LOOP);
+			glBegin(type);
 			Point p1 = Vertices[M * i + j + 1], p2 = Vertices[(j == M - 1 ? M * i + 1 : M * i + j + 2)];
 			Point p3 = Vertices[M * (i + 1) + j + 1], p4 = Vertices[(j == M - 1 ? M * (i + 1) + 1 : M * (i + 1) + j + 2)];
-			glVertex3f(p1.x, p1.y, p1.z);
-			glVertex3f(p3.x, p3.y, p3.z);
-			glVertex3f(p4.x, p4.y, p4.z);
-			glVertex3f(p2.x, p2.y, p2.z);
+			glVertex3f(p1.x + x, p1.y + y, p1.z + z);
+			glVertex3f(p3.x + x, p3.y + y, p3.z + z);
+			glVertex3f(p4.x + x, p4.y + y, p4.z + z);
+			glVertex3f(p2.x + x, p2.y + y, p2.z + z);
 			glEnd();
 		}
 	}
 
 	for (int i = 0; i < M; i++) {
-		glBegin(GL_LINE_LOOP);
+		glBegin(type);
 		Point p = Vertices[Vertices.size() - 1];
 		Point p1 = Vertices[M * (2 * N - 1) + i + 1], p2 = Vertices[(i == M - 1 ? M * (2 * N - 1) + 1 : M * (2 * N - 1) + i + 2)];
-		glVertex3f(p.x, p.y, p.z);
-		glVertex3f(p1.x, p1.y, p1.z);
-		glVertex3f(p2.x, p2.y, p2.z);
+		glVertex3f(p.x + x, p.y + y, p.z + z);
+		glVertex3f(p1.x + x, p1.y + y, p1.z + z);
+		glVertex3f(p2.x + x, p2.y + y, p2.z + z);
 		glEnd();
 	}
 
@@ -365,12 +405,14 @@ void display(GLFWwindow* window) {
 
 		glLoadIdentity();
 
-		glLoadMatrixf(project);
+		glMultMatrixf(project);
 
 		glOrtho(-windowWidth / 2, windowWidth / 2, -windowHeight / 2,
 			windowHeight / 2, -(windowWidth + windowHeight) / 4, (windowWidth + windowHeight) / 4);
 
 		glMatrixMode(GL_MODELVIEW_MATRIX);
+
+
 
 		drawStaticCube(window);
 		//drawCube(window);
@@ -379,6 +421,8 @@ void display(GLFWwindow* window) {
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		glPushMatrix();
 	}
 }
 
