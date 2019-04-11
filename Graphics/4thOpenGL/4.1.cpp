@@ -35,74 +35,60 @@ struct Vertex {
   }
 };
 
-
 bool fl = false;
 int width = 800,
     height = 800;
 
-vector<uint> myData(height * width, bgcolor);
+vector<uint> Pixels(height * width, bgcolor);
 vector<Vertex> V;
 vector<Edge> E;
-
 
 uint verticesCount = 0;
 uint color = 0;
 
-
-void buffer_callback(GLFWwindow *window, int a, int b) {
-  glfwGetFramebufferSize(window, &width, &height);
-  V.clear();
-  E.clear();
-  myData.clear();
-  myData.resize(width * height);
-  fl = false;
-  fill(myData.begin(), myData.end(), bgcolor);
-  verticesCount = 0;
-  glViewport(0, 0, width, height);
-}
-
-void drawEdges(GLFWwindow *window) {
+void drawFilled(GLFWwindow *window) {
   glfwGetFramebufferSize(window, &width, &height);
 
-  vector<Edge> activeEdges;
+  vector<Edge> CAP;
   vector<Vertex> sortedVertices = V;
   sort(sortedVertices.begin(), sortedVertices.end());
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      myData[(height - i - 1) * width + j] = bgcolor;
+      Pixels[(height - i - 1) * width + j] = bgcolor;
     }
   }
   for (int i = 0; i < verticesCount; i++) {
-    myData[(height - sortedVertices[i].y - 1) * width + sortedVertices[i].x] = color;
+    Pixels[(height - sortedVertices[i].y - 1) * width + sortedVertices[i].x] = color;
     if (i < verticesCount - 1) {
       for (int j = 0; j < sortedVertices[i].incidentEdges.size(); j++) {
         Edge &e = sortedVertices[i].incidentEdges[j];
-        auto f = find(activeEdges.begin(), activeEdges.end(), e);
-        if (f != activeEdges.end()) {
-          activeEdges.erase(f);
+        auto f = find(CAP.begin(), CAP.end(), e);
+        if (f != CAP.end()) {
+          CAP.erase(f);
         } else {
           if (abs(e.tg) < d) {
             for (int w = min(e.x0, e.x1); w <= max(e.x0, e.x1); w++) {
-              myData[(height - sortedVertices[i].y - 1) * width + w] = color;
+              Pixels[(height - sortedVertices[i].y - 1) * width + w] = color;
             }
           } else {
-            activeEdges.push_back(e);
+            CAP.push_back(e);
           }
         }
       }
       int y_cur = sortedVertices[i].y;
       while (y_cur < sortedVertices[i + 1].y) {
         vector<int> xs;
-        for (int j = 0; j < activeEdges.size(); j++) {
-          int y_start = min(activeEdges[j].y0, activeEdges[j].y1);
-          int cur_x_cross = activeEdges[j].x_h - abs(y_cur - y_start) * 1.0 / activeEdges[j].tg;
-          xs.push_back(cur_x_cross);
+        for (int j = 0; j < CAP.size(); j++) {
+          int y_min = min(CAP[j].y0, CAP[j].y1);
+          int cur_x = CAP[j].x_h - abs(y_cur - y_min) * 1.0 / CAP[j].tg;
+          xs.push_back(cur_x);
         }
-        if (xs.size() % 2 == 1) xs.pop_back();
+        //if (xs.size() % 2 == 1)
+        //  xs.pop_back();
         sort(xs.begin(), xs.end());
         for (int j = 0; j < xs.size(); j += 2) {
           for (int k = xs[j]; k <= xs[j + 1]; k++) {
-            myData[(height - y_cur - 1) * width + k] = color;
+            Pixels[(height - y_cur - 1) * width + k] = color;
           }
         }
         y_cur++;
@@ -115,17 +101,22 @@ void drawUnfilled(GLFWwindow *window) {
   glfwGetFramebufferSize(window, &width, &height);
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      myData[(height - i - 1) * width + j] = bgcolor;
+      Pixels[(height - i - 1) * width + j] = bgcolor;
     }
   }
   for (int i = 0; i < E.size(); i++) {
-    int x0 = E[i].x0, y0 = E[i].y0, x1 = E[i].x1, y1 = E[i].y1;
-    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int x0 = E[i].x0,
+        y0 = E[i].y0,
+        x1 = E[i].x1,
+        y1 = E[i].y1;
+    int dx = abs(x1 - x0),
+        sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0),
+        sy = y0 < y1 ? 1 : -1;
     int err = dx + dy, e2;
 
     while (true) {
-      myData[(height - y0 - 1) * width + x0] = color;
+      Pixels[(height - y0 - 1) * width + x0] = color;
       if (x0 == x1 && y0 == y1) {
         break;
       }
@@ -149,16 +140,16 @@ void addVertex(int x, int y, GLFWwindow *window) {
     }
   }
   verticesCount++;
-  V.push_back(Vertex(x, y));
+  V.emplace_back(Vertex(x, y));
 
   if (verticesCount > 1) {
-    if (E.size() > 0) {
+    if (!E.empty()) {
       E.pop_back();
     }
-    if (V[verticesCount - 2].incidentEdges.size() > 0) {
+    if (!V[verticesCount - 2].incidentEdges.empty()) {
       V[verticesCount - 2].incidentEdges.pop_back();
     }
-    if (V[0].incidentEdges.size() > 0) {
+    if (!V[0].incidentEdges.empty()) {
       V[0].incidentEdges.pop_back();
     }
 
@@ -190,13 +181,24 @@ void addVertex(int x, int y, GLFWwindow *window) {
   }
 }
 
+void buffer_callback(GLFWwindow *window, int w, int h) {
+  glfwGetFramebufferSize(window, &width, &height);
+  V.clear();
+  E.clear();
+  Pixels.resize(width * height);
+  fl = false;
+  fill(Pixels.begin(), Pixels.end(), bgcolor);
+  verticesCount = 0;
+  glViewport(0, 0, width, height);
+}
+
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
     double x, y;
     glfwGetCursorPos(window, &x, &y);
     addVertex(static_cast<int>(x), static_cast<int>(y), window);
     if (fl)
-      drawEdges(window);
+      drawFilled(window);
     else
       drawUnfilled(window);
   }
@@ -206,11 +208,17 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
   if (action == GLFW_PRESS) {
     if (key == GLFW_KEY_ESCAPE)
       glfwSetWindowShouldClose(window, GL_TRUE);
-
+    if (key == GLFW_KEY_BACKSPACE) {
+      V.clear();
+      E.clear();
+      fl = false;
+      fill(Pixels.begin(), Pixels.end(), bgcolor);
+      verticesCount = 0;
+    }
     if (key == GLFW_KEY_ENTER) {
       fl = !fl;
       if (fl) {
-        drawEdges(window);
+        drawFilled(window);
       } else {
         drawUnfilled(window);
       }
@@ -221,7 +229,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 int main() {
   color = maincolor;
 
-  //myData.resize(height * width);
+  //Pixels.resize(height * width);
   GLFWwindow *window;
 
   if (!glfwInit()) {
@@ -235,14 +243,13 @@ int main() {
   }
 
   glfwMakeContextCurrent(window);
-  glClearColor(0.f, 1.f, 1.f, 1.f);
   glfwSetKeyCallback(window, key_callback);
   glfwSetFramebufferSizeCallback(window, buffer_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT);
-    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, myData.data());
+    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, Pixels.data());
     glfwSwapBuffers(window);
 
     glfwPollEvents();
