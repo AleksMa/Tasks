@@ -10,15 +10,15 @@ using std::vector;
 
 struct Vertex {
   Vertex() : x(0), y(0) {};
-  Vertex(int x, int y) : x(x), y(y) {};
-  int x;
-  int y;
+  Vertex(double x, double y) : x(x), y(y) {};
+  double x;
+  double y;
 };
 
 struct Edge {
   Edge(Vertex f, Vertex s) : first(f), second(s) {};
-  int x() { return second.x - first.x; }
-  int y() { return second.y - first.y; }
+  double x() { return second.x - first.x; }
+  double y() { return second.y - first.y; }
   Vertex first;
   Vertex second;
 };
@@ -33,7 +33,7 @@ class Polygon {
 
   int size() const { return points.size(); }
 
-  void add_vertex(int x, int y) {
+  void add_vertex(double x, double y) {
     points.emplace_back(Vertex(x, y));
   }
 
@@ -53,7 +53,7 @@ class ClippedPolygon {
 
   int size() const { return points.size(); }
 
-  void add_vertex(int x, int y) {
+  void add_vertex(double x, double y) {
     points.emplace_back(Vertex(x, y));
   }
 
@@ -66,12 +66,14 @@ int order = 0;
 int width = 800,
     height = 800;
 
-//#define test
+// #define test
 
 #ifdef test
 ClippedPolygon object({Vertex{200, 300}, Vertex{400, 500}, Vertex{600, 400}});
 Polygon clipper({Vertex{300, 300}, Vertex{300, 400}, Vertex{400, 400}, Vertex{400, 300}});
 #endif
+
+// ClippedPolygon object;
 
 #ifndef test
 ClippedPolygon object;
@@ -79,15 +81,15 @@ Polygon clipper;
 #endif
 
 Vertex intersection(const Edge &A, const Edge &B) {
-  int dxA = A.first.x - A.second.x;
-  int dyA = A.first.y - A.second.y;
-  int prodA = A.first.x * A.second.y - A.first.y * A.second.x;
+  double dxA = A.first.x - A.second.x;
+  double dyA = A.first.y - A.second.y;
+  double prodA = A.first.x * A.second.y - A.first.y * A.second.x;
 
-  int dxB = B.first.x - B.second.x;
-  int dyB = B.first.y - B.second.y;
-  int prodB = B.first.x * B.second.y - B.first.y * B.second.x;
+  double dxB = B.first.x - B.second.x;
+  double dyB = B.first.y - B.second.y;
+  double prodB = B.first.x * B.second.y - B.first.y * B.second.x;
 
-  int denom = dxA * dyB - dyA * dxB;
+  double denom = dxA * dyB - dyA * dxB;
 
   return Vertex{(prodA * dxB - dxA * prodB) / denom,
                 (prodA * dyB - dyA * prodB) / denom};
@@ -102,9 +104,9 @@ vector<Vertex> clip(const vector<Vertex> &vertices,
     Vertex S = vertices[i];
     Vertex P = vertices[j];
 
-    int iPos = (Aj.x - Ai.x) * (S.y - Ai.y) - (Aj.y - Ai.y) * (S.x - Ai.x);
+    double iPos = (Aj.x - Ai.x) * (S.y - Ai.y) - (Aj.y - Ai.y) * (S.x - Ai.x);
 
-    int kPos = (Aj.x - Ai.x) * (P.y - Ai.y) - (Aj.y - Ai.y) * (P.x - Ai.x);
+    double kPos = (Aj.x - Ai.x) * (P.y - Ai.y) - (Aj.y - Ai.y) * (P.x - Ai.x);
 
     if (order > 0) {   // Обход против часовой стрелки - надо менять знаки
       iPos *= -1;
@@ -133,6 +135,29 @@ void sutherland_hodgman(ClippedPolygon &object,
   object.setPoints(tmp);
 }
 
+double scolarProd(const Vertex &A, const Vertex &B){
+  return A.x * B.x + A.y * B.y;
+}
+
+const double e = 1e-6;
+
+bool equal(const double &a, const double &b){
+  return abs(a - b) < e;
+}
+
+bool isParallel(const Edge &A, const Edge &B){
+  double xA = A.second.x - A.first.x, yA = A.second.y - A.first.y;
+  double xB = B.second.x - B.first.x, yB = B.second.y - B.first.y;
+
+  Vertex normA = Vertex(-yA, xA), normB = Vertex(-yB, xB);
+
+  double a_A = -yA, b_A = xA, a_B = -yB, b_B = xB;
+  double c_A = - scolarProd(normA, Vertex(A.first.x, A.first.y)),
+      c_B = - scolarProd(normB, Vertex(B.first.x, B.first.y));
+
+  return equal(a_A / a_B, b_A / b_B) && equal(c_A / c_B, b_A / b_B);
+}
+
 GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
   if (action == GLFW_PRESS || action == GLFW_REPEAT) {
     switch (key) {
@@ -143,10 +168,23 @@ GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action,
           object.load_buffer();
           sutherland_hodgman(object, clipper);
         } else object.swap_buffers();
+
+        auto temp = object.getPoints();
+        for(int i = 0; i < temp.size() - 1; i++){
+          for(int j = i + 1; j < temp.size(); j++){
+            cout << isParallel(Edge(temp[i], temp[i + 1]), Edge(temp[j % temp.size()], temp[(j + 1) % temp.size()])) << " " << i << "  " << j
+                  << "  [(" << temp[i].x << ", " <<  temp[i].y << ") , (" << temp[i + 1].x << ", " <<  temp[i + 1].y << ")]; "
+                  << "  [(" << temp[j % temp.size()].x << ", " <<  temp[j % temp.size()].y << ") , (" << temp[(j + 1) % temp.size()].x << ", " <<  temp[(j + 1) % temp.size()].y << ")]; " << endl;
+          }
+          cout << endl;
+        }
+
         break;
     }
   }
 }
+
+
 
 GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLint mods) {
   if (action == GLFW_PRESS) {
@@ -173,10 +211,10 @@ GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLi
   }
 }
 
-void draw(const vector<Vertex> &points) {
-  glBegin(GL_LINE_LOOP);
+void draw(const vector<Vertex> &points, GLenum type) {
+  glBegin(type);
   for (int i = 0; i < points.size(); ++i) {
-    glVertex2i(points[i].x, points[i].y);
+    glVertex2d(points[i].x, points[i].y);
   }
   glEnd();
 }
@@ -201,7 +239,7 @@ int main() {
 
   while (!glfwWindowShouldClose(window)) {
 
-    GLint w, h;
+    int w, h;
     glfwGetFramebufferSize(window, &w, &h);
 
     glViewport(0, 0, width, height);
@@ -215,11 +253,12 @@ int main() {
 
     glLineWidth(2);
     glColor3b(50, 0, 127);
-    draw(object.getPoints());
+    draw(object.getPoints(), isClipping ? GL_LINE_LOOP : GL_LINE_LOOP);
 
     glLineWidth(3);
     glColor3b(127, 0, 0);
-    draw(clipper.getPoints());
+    if(!isClipping)
+      draw(clipper.getPoints(), GL_LINE_LOOP);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
