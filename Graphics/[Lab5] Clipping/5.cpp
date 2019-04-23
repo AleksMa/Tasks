@@ -7,6 +7,8 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::set;
+using std::max;
+using std::min;
 #define uint unsigned int
 
 struct Vertex {
@@ -38,7 +40,15 @@ class Polygon {
     points.emplace_back(Vertex(x, y));
   }
 
- protected:
+  void draw(GLenum type) {
+    glBegin(type);
+    for (int i = 0; i < points.size(); ++i) {
+      glVertex2d(points[i].x, points[i].y);
+    }
+    glEnd();
+  }
+
+ private:
   vector<Vertex> points;
 };
 
@@ -49,16 +59,19 @@ class ClippedPolygon {
 
   const vector<Vertex> &getPoints() const { return points; };
   void setPoints(const vector<Vertex> &p) { points = p; };
-  void swap_buffers() { points = old_points; }
-  void load_buffer() { old_points = points; }
-
-  int size() const { return points.size(); }
 
   void add_vertex(double x, double y) {
     points.emplace_back(Vertex(x, y));
   }
 
- protected:
+  void swap_buffers() { points = old_points; }
+  void load_buffer() { old_points = points; }
+
+  int size() const { return points.size(); }
+
+  void draw(GLenum type, bool partition_like_a_russian);
+
+ private:
   vector<Vertex> points, old_points;
 };
 
@@ -67,21 +80,54 @@ int order = 0;
 int width = 800,
     height = 800;
 
-// #define test
+#define debug
 
-#ifdef test
-ClippedPolygon object({Vertex{200, 300}, Vertex{400, 500}, Vertex{600, 400}});
-Polygon clipper({Vertex{200, 300}, Vertex{200, 400}, Vertex{500, 400}, Vertex{500, 300}});
+#ifdef debug
+//ClippedPolygon object({Vertex{200, 300}, Vertex{400, 500}, Vertex{600, 400}});
+Polygon clipper({Vertex{200, 200}, Vertex{200, 400}, Vertex{600, 400}, Vertex{600, 200}});
+ClippedPolygon object;
+set<int> partition;
 #endif
 
 //ClippedPolygon object;
 //set<int> partition;
 
-#ifndef test
+#ifndef debug
 ClippedPolygon object;
 Polygon clipper;
 set<int> partition;
 #endif
+
+void ClippedPolygon::draw(GLenum type, bool partition_like_a_russian) {
+  if (partition_like_a_russian && size() > 4 && !partition.empty()) {
+    auto iter = partition.begin();
+    int i = *iter;
+    iter++;
+    while (iter != partition.end()) {
+      glBegin(type);
+      do {
+        i++;
+        glVertex2d(points[i % points.size()].x, points[i % points.size()].y);
+      } while (((i % points.size()) != *iter) && (i % points.size()) != *partition.begin());
+      glEnd();
+      iter++;
+    }
+
+    glBegin(type);
+    do {
+      i++;
+      glVertex2d(points[i % points.size()].x, points[i % points.size()].y);
+    } while ((i % points.size()) != *partition.begin());
+    glEnd();
+    return;
+  }
+
+  glBegin(type);
+  for (int i = 0; i < points.size(); ++i) {
+    glVertex2d(points[i].x, points[i].y);
+  }
+  glEnd();
+}
 
 Vertex intersection(const Edge &A, const Edge &B) {
   double dxA = A.first.x - A.second.x;
@@ -144,7 +190,7 @@ double scolarProd(const Vertex &A, const Vertex &B) {
 
 const double eps = 1e-6;
 
-double abs(const double &a){
+double abs(const double &a) {
   return a < 0 ? -a : a;
 }
 
@@ -162,7 +208,28 @@ bool isParallel(const Edge &A, const Edge &B) {
   double c_A = -scolarProd({-yA, xA}, {A.first.x, A.first.y}),
       c_B = -scolarProd({-yB, xB}, {B.first.x, B.first.y});
 
+  if ((a_A == 0 && a_B == 0 && equal(b_A / b_B, c_A / c_B)) || (b_A == 0 && b_B == 0 && equal(a_A / a_B, c_A / c_B)))
+    return true;
+
   return equal(a_A / a_B, b_A / b_B) && equal(a_A / a_B, c_A / c_B);
+}
+
+bool innerLine(const Edge &A, const Edge &B) {
+
+  double max_X_A = max(A.first.x, A.second.x), min_X_A = min(A.first.x, A.second.x),
+      max_Y_A = max(A.first.y, A.second.y), min_Y_A = min(A.first.y, A.second.y),
+      max_X_B = max(B.first.x, B.second.x), min_X_B = min(B.first.x, B.second.x),
+      max_Y_B = max(B.first.y, B.second.y), min_Y_B = min(B.first.y, B.second.y);
+
+  return (A.first.x <= max_X_B && A.first.x >= min_X_B &&
+      A.first.y <= max_Y_B && A.first.y >= min_Y_B &&
+      A.second.x <= max_X_B && A.second.x >= min_X_B &&
+      A.second.y <= max_Y_B && A.second.y >= min_Y_B) ||
+      (B.first.x <= max_X_A && B.first.x >= min_X_A &&
+          B.first.y <= max_Y_A && B.first.y >= min_Y_A &&
+          A.second.x <= max_X_A && B.second.x >= min_X_A &&
+          B.second.y <= max_Y_A && B.second.y >= min_Y_A);
+
 }
 
 GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
@@ -179,7 +246,8 @@ GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action,
           auto temp = object.getPoints();
           for (int i = 0; i < temp.size() - 1; i++) {
             for (int j = i + 1; j < temp.size(); j++) {
-              if (isParallel({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})) {
+              if (isParallel({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})
+                  && innerLine({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})) {
                 partition.insert(i);
                 partition.insert(j);
               }
@@ -195,8 +263,7 @@ GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action,
 
         } else object.swap_buffers();
         break;
-      case GLFW_KEY_SPACE:
-        no_to_clipping = !no_to_clipping;
+      case GLFW_KEY_SPACE:no_to_clipping = !no_to_clipping;
         break;
     }
   }
@@ -225,37 +292,6 @@ GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLi
         break;
     }
   }
-}
-
-void draw(const vector<Vertex> &points, GLenum type, bool partition_like_a_russian) {
-  if (partition_like_a_russian) {
-    auto iter = partition.begin();
-    int i = *iter;
-    iter++;
-    while (iter != partition.end()) {
-      glBegin(type);
-      do {
-        i++;
-        glVertex2d(points[i % points.size()].x, points[i % points.size()].y);
-      } while (((i % points.size()) != *iter) && (i % points.size()) != *partition.begin());
-      glEnd();
-      iter++;
-    }
-
-    glBegin(type);
-    do {
-      i++;
-      glVertex2d(points[i % points.size()].x, points[i % points.size()].y);
-    } while ((i % points.size()) != *partition.begin());
-    glEnd();
-
-    return;
-  }
-  glBegin(type);
-  for (int i = 0; i < points.size(); ++i) {
-    glVertex2d(points[i].x, points[i].y);
-  }
-  glEnd();
 }
 
 int main() {
@@ -292,11 +328,11 @@ int main() {
 
     glLineWidth(3);
     glColor3b(50, 0, 127);
-    draw(object.getPoints(), /*is_clipping ? GL_LINE_LOOP : */GL_LINE_LOOP, is_clipping && !partition.empty());
+    object.draw(GL_LINE_LOOP, is_clipping);
 
     glColor3b(127, 0, 0);
     if (!no_to_clipping)
-      draw(clipper.getPoints(), GL_LINE_LOOP, false);
+      clipper.draw(GL_LINE_LOOP);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
