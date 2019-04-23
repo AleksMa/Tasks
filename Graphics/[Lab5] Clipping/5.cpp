@@ -80,7 +80,7 @@ int order = 0;
 int width = 800,
     height = 800;
 
-#define debug
+//#define debug
 
 #ifdef debug
 //ClippedPolygon object({Vertex{200, 300}, Vertex{400, 500}, Vertex{600, 400}});
@@ -269,16 +269,18 @@ GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action,
   }
 }
 
+float kW = 1, kH = 1;
+
 GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLint mods) {
   if (action == GLFW_PRESS) {
     double x, y;
     switch (button) {
       case GLFW_MOUSE_BUTTON_LEFT:glfwGetCursorPos(window, &x, &y);
-        object.add_vertex(static_cast<int>(x), height - static_cast<int>(y));
+        object.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
         cout << "BLUE: " << x << ", " << y << endl;
         break;
       case GLFW_MOUSE_BUTTON_RIGHT:glfwGetCursorPos(window, &x, &y);
-        clipper.add_vertex(static_cast<int>(x), height - static_cast<int>(y));
+        clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
         if (clipper.size() > 2 && !order) {
           int i = 0;
           vector<Vertex> tmp = clipper.getPoints();
@@ -292,6 +294,14 @@ GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLi
         break;
     }
   }
+}
+
+void buffer_callback(GLFWwindow *window, int w, int h) {
+  int oldW = width, oldH = height;
+  glfwGetFramebufferSize(window, &width, &height);
+  kW *= (float) width / oldW;
+  kH *= (float) height / oldH;
+  glViewport(0, 0, width, height);
 }
 
 int main() {
@@ -311,13 +321,13 @@ int main() {
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, key_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
+  glfwSetFramebufferSizeCallback(window, buffer_callback);
+
+  glViewport(0, 0, width, height);
 
   while (!glfwWindowShouldClose(window)) {
 
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-
-    glViewport(0, 0, width, height);
+    //glViewport(0, 0, width, height);
 
     glClearColor(0.7, 1, 1, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -325,6 +335,10 @@ int main() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, width, 0, height, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glScalef(kW, kH, 1);
 
     glLineWidth(3);
     glColor3b(50, 0, 127);
