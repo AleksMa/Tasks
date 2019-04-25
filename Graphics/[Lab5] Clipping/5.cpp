@@ -1,38 +1,37 @@
 #include "bits/stdc++.h"
 #include <GLFW/glfw3.h>
-#include <GL/glu.h>
 
-//using namespace std;
 using std::cout;
 using std::endl;
 using std::vector;
 using std::set;
 using std::max;
 using std::min;
-#define uint unsigned int
 
-struct Vertex {
-  Vertex() : x(0), y(0) {};
-  Vertex(double x, double y) : x(x), y(y) {};
+/// SOME CLASSES & STRUCTS
+
+struct vertex {
+  vertex() : x(0), y(0) {};
+  vertex(double x, double y) : x(x), y(y) {};
   double x;
   double y;
 };
 
-struct Edge {
-  Edge(Vertex f, Vertex s) : first(f), second(s) {};
+struct edge {
+  edge(vertex f, vertex s) : first(f), second(s) {};
   double x() const { return second.x - first.x; }
   double y() const { return second.y - first.y; }
-  Vertex first;
-  Vertex second;
+  vertex first;
+  vertex second;
 };
 
-class Polygon {
+class polygon {
  public:
-  Polygon() : on_tour(0) { points = vector<Vertex>(0); }
-  //explicit Polygon(const vector<Vertex> &p) : points(p) {};
+  polygon() : on_tour(0) { points = vector<vertex>(0); }
+  //explicit polygon(const vector<vertex> &p) : points(p) {};
 
-  const vector<Vertex> &getPoints() const { return points; };
-  void setPoints(const vector<Vertex> &p) { points = p; };
+  const vector<vertex> &get_points() const { return points; };
+  void set_points(const vector<vertex> &p) { points = p; };
 
   const int &get_on_tour() { return on_tour; };
   void set_on_tour(const int &t) { on_tour = t; };
@@ -40,7 +39,7 @@ class Polygon {
   int size() const { return points.size(); }
 
   void add_vertex(double x, double y) {
-    points.emplace_back(Vertex(x, y));
+    points.emplace_back(vertex(x, y));
   }
 
   void draw(GLenum type) {
@@ -52,21 +51,20 @@ class Polygon {
   }
 
  private:
-  vector<Vertex> points;
-  int on_tour;
-
+  vector<vertex> points;
+  int on_tour;              // Направление обхода
 };
 
-class ClippedPolygon {
+class clipped_polygon {
  public:
-  ClippedPolygon() { points = old_points = vector<Vertex>(0); }
-  //explicit ClippedPolygon(const vector<Vertex> &p) : points(p), old_points(p) {};
+  clipped_polygon() { points = old_points = vector<vertex>(0); }
+  //explicit clipped_polygon(const vector<vertex> &p) : points(p), old_points(p) {};
 
-  const vector<Vertex> &getPoints() const { return points; };
-  void setPoints(const vector<Vertex> &p) { points = p; };
+  const vector<vertex> &get_points() const { return points; };
+  void set_points(const vector<vertex> &p) { points = p; };
 
   void add_vertex(double x, double y) {
-    points.emplace_back(Vertex(x, y));
+    points.emplace_back(vertex(x, y));
   }
 
   void swap_buffers() { points = old_points; }
@@ -77,33 +75,19 @@ class ClippedPolygon {
   void draw(GLenum type, bool partition_like_a_russian);
 
  private:
-  vector<Vertex> points, old_points;
+  vector<vertex> points, old_points;
 };
 
 bool is_clipping = false, no_to_clipping = false;
-int order = 0;
 int width = 800,
     height = 800;
+double kW = 1, kH = 1;
 
-//#define debug
-
-#ifdef debug
-//ClippedPolygon object({Vertex{200, 300}, Vertex{400, 500}, Vertex{600, 400}});
-Polygon clipper({Vertex{200, 200}, Vertex{200, 400}, Vertex{600, 400}, Vertex{600, 200}});
-ClippedPolygon object;
+clipped_polygon object;
+polygon clipper;
 set<int> partition;
-#endif
 
-//ClippedPolygon object;
-//set<int> partition;
-
-#ifndef debug
-ClippedPolygon object;
-Polygon clipper;
-set<int> partition;
-#endif
-
-void ClippedPolygon::draw(GLenum type, bool partition_like_a_russian) {
+void clipped_polygon::draw(GLenum type, bool partition_like_a_russian) {
   if (partition_like_a_russian && size() > 4 && !partition.empty()) {
     auto iter = partition.begin();
     int i = *iter;
@@ -134,68 +118,7 @@ void ClippedPolygon::draw(GLenum type, bool partition_like_a_russian) {
   glEnd();
 }
 
-Vertex intersection(const Edge &A, const Edge &B) {
-  double dxA = A.first.x - A.second.x;
-  double dyA = A.first.y - A.second.y;
-  double prodA = A.first.x * A.second.y - A.first.y * A.second.x;
-
-  double dxB = B.first.x - B.second.x;
-  double dyB = B.first.y - B.second.y;
-  double prodB = B.first.x * B.second.y - B.first.y * B.second.x;
-
-  double denom = dxA * dyB - dyA * dxB;
-
-  return Vertex{(prodA * dxB - dxA * prodB) / denom,
-                (prodA * dyB - dyA * prodB) / denom};
-}
-
-vector<Vertex> clip(const vector<Vertex> &vertices,
-                    const Vertex &Ai, const Vertex &Aj) {
-  vector<Vertex> tmp;
-  for (int i = 0; i < vertices.size(); i++) {
-    int j = (i + 1) % vertices.size();
-
-    Vertex S = vertices[i];
-    Vertex P = vertices[j];
-
-    double iPos = (Aj.x - Ai.x) * (S.y - Ai.y) - (Aj.y - Ai.y) * (S.x - Ai.x);
-
-    double kPos = (Aj.x - Ai.x) * (P.y - Ai.y) - (Aj.y - Ai.y) * (P.x - Ai.x);
-
-    if (order > 0) {   // Обход против часовой стрелки - надо менять знаки
-      iPos *= -1;
-      kPos *= -1;
-    }
-
-    if (iPos < 0 && kPos < 0) {
-      tmp.push_back(P);
-    } else if (iPos >= 0 && kPos < 0) {
-      tmp.push_back(intersection(Edge{Ai, Aj}, Edge{S, P}));
-      tmp.push_back(P);
-    } else if (iPos < 0 && kPos >= 0) {
-      tmp.push_back(intersection(Edge{Ai, Aj}, Edge{S, P}));
-    }
-  }
-  return tmp;
-}
-
-void sutherland_hodgman(ClippedPolygon &object,
-                        const Polygon &clipper) {
-  vector<Vertex> tmp(object.getPoints());
-  for (int i = 0; i < clipper.size(); i++) {
-    int k = (i + 1) % clipper.size();
-    tmp = clip(tmp, clipper.getPoints()[i], clipper.getPoints()[k]);
-  }
-  object.setPoints(tmp);
-}
-
-double scalar_prod(const Vertex &A, const Vertex &B) {
-  return A.x * B.x + A.y * B.y;
-}
-
-double vector_prod(const Edge &A, const Edge &B) {
-  return A.x() * B.y() - A.y() * B.x();
-}
+// SOME USEFUL FUNCS
 
 const double eps = 1e-6;
 
@@ -203,28 +126,56 @@ double abs(const double &a) { return a < 0 ? -a : a; }
 
 int normal(const double &a) { return a / abs(a); }
 
-bool equal(const double &a, const double &b) {
-  return abs(a - b) < eps;
+bool equal(const double &a, const double &b) { return abs(a - b) < eps; }
+
+// Скалярное произведение отрезков с началом в 0 и концами в точках А и В.
+double scalar_prod(const vertex &A, const vertex &B) { return A.x * B.x + A.y * B.y; }
+
+// Векторное произведение отрезков с началом в 0 и концами в точках А и В.
+double vector_prod(const vertex &A, const vertex &B) { return A.x * B.y - A.y * B.x; }
+
+// Векторное произведение отрезков (векторов) А и В
+double vector_prod(const edge &A, const edge &B) { return A.x() * B.y() - A.y() * B.x(); }
+
+// Определяет точку пересечения отрезков А и В (вернее, прямых, их содержащих)
+// Вызывается только тогда, когда прямые не параллельны
+vertex intersection(const edge &A, const edge &B) {
+  double dxA = A.first.x - A.second.x;
+  double dyA = A.first.y - A.second.y;
+  double prodA = vector_prod(A.first, A.second);
+
+  double dxB = B.first.x - B.second.x;
+  double dyB = B.first.y - B.second.y;
+  double prodB = vector_prod(B.first, B.second);
+
+  double denom = dxA * dyB - dyA * dxB;
+
+  return vertex{(prodA * dxB - dxA * prodB) / denom,
+                (prodA * dyB - dyA * prodB) / denom};
 }
 
-bool isParallel(const Edge &A, const Edge &B) {
-  double xA = A.second.x - A.first.x, yA = A.second.y - A.first.y;
-  double xB = B.second.x - B.first.x, yB = B.second.y - B.first.y;
+// Проверяет совпадение прямых, лежащих на отрезках А и В.
 
-  Vertex normA = Vertex(-yA, xA), normB = Vertex(-yB, xB);
+bool isParallel(const edge &A, const edge &B) {
+  vertex normA = vertex(-A.y(), A.x()),         // Нормали к отрезкам
+         normB = vertex(-A.y(), B.x());         // Вообще не используются, только для наглядности
 
-  double a_A = -yA, b_A = xA, a_B = -yB, b_B = xB;
-  double c_A = -scalar_prod({-yA, xA}, {A.first.x, A.first.y}),
-      c_B = -scalar_prod({-yB, xB}, {B.first.x, B.first.y});
+  double a_A = -A.y(), b_A = A.x(), a_B = -B.y(), b_B = B.x();          // Коэффициенты общего уравнения прямых
+  double c_A = -scalar_prod({-A.y(), A.x()}, {A.first.x, A.first.y}),   // Коэффициенты С - просто подставляем
+      c_B = -scalar_prod({-B.y(), B.x()}, {B.first.x, B.first.y});      // начальную точку в уравнение к коэффициентами А и В
 
   if ((a_A == 0 && a_B == 0 && equal(b_A / b_B, c_A / c_B)) || (b_A == 0 && b_B == 0 && equal(a_A / a_B, c_A / c_B)))
-    return true;
+    return true;        // Если параллельны осям
 
-  return equal(a_A / a_B, b_A / b_B) && equal(a_A / a_B, c_A / c_B);
+  return equal(a_A / a_B, b_A / b_B) && equal(a_A / a_B, c_A / c_B);      // Иначе пропорциональны коэффициенты
 }
 
-bool innerLine(const Edge &A, const Edge &B) {
-
+ /*
+  * Определяет, лежит ли один из отрезков А, В внутри другого из них.
+  * Проверяет, лежат ли точки одного отрезка в прямоугольнике, образованном максимальными и минимальными вершинами другого
+  * Это достаточное условие, т. к. перед вызовом этой функции проверяется совпадение прямых на этих отрезках
+  */
+bool inner_line(const edge &A, const edge &B) {
   double max_X_A = max(A.first.x, A.second.x), min_X_A = min(A.first.x, A.second.x),
       max_Y_A = max(A.first.y, A.second.y), min_Y_A = min(A.first.y, A.second.y),
       max_X_B = max(B.first.x, B.second.x), min_X_B = min(B.first.x, B.second.x),
@@ -236,10 +187,58 @@ bool innerLine(const Edge &A, const Edge &B) {
       A.second.y <= max_Y_B && A.second.y >= min_Y_B) ||
       (B.first.x <= max_X_A && B.first.x >= min_X_A &&
           B.first.y <= max_Y_A && B.first.y >= min_Y_A &&
-          A.second.x <= max_X_A && B.second.x >= min_X_A &&
+          B.second.x <= max_X_A && B.second.x >= min_X_A &&
           B.second.y <= max_Y_A && B.second.y >= min_Y_A);
 
 }
+
+/// SUTHERLAND-HODGMAN ALG
+
+// Итеративная функция алгоритма Сазерленда-Ходжмэна (по ребрам отсекателя)
+vector<vertex> clip(const vector<vertex> &vertices,
+                    const vertex &Ai, const vertex &Aj) {
+  vector<vertex> tmp;
+  for (int i = 0; i < vertices.size(); i++) {
+    int j = (i + 1) % vertices.size();
+
+    vertex S = vertices[i];
+    vertex P = vertices[j];
+
+    double iPos = (Aj.x - Ai.x) * (S.y - Ai.y) - (Aj.y - Ai.y) * (S.x - Ai.x);
+
+    double kPos = (Aj.x - Ai.x) * (P.y - Ai.y) - (Aj.y - Ai.y) * (P.x - Ai.x);
+
+    if (clipper.get_on_tour() > 0) {   // Обход против часовой стрелки - надо менять знаки
+      iPos *= -1;
+      kPos *= -1;
+    }
+
+    if (iPos < 0 && kPos < 0) {
+      tmp.push_back(P);
+    } else if (iPos >= 0 && kPos < 0) {
+      tmp.push_back(intersection(edge{Ai, Aj}, edge{S, P}));
+      tmp.push_back(P);
+    } else if (iPos < 0 && kPos >= 0) {
+      tmp.push_back(intersection(edge{Ai, Aj}, edge{S, P}));
+    }
+  }
+  return tmp;
+}
+
+// Main-функция алгоритма Сазерленда-Ходжмэна
+void sutherland_hodgman(clipped_polygon &object,
+                        const polygon &clipper) {
+  vector<vertex> tmp(object.get_points());
+  for (int i = 0; i < clipper.size(); i++) {
+    int k = (i + 1) % clipper.size();
+    tmp = clip(tmp, clipper.get_points()[i], clipper.get_points()[k]);
+  }
+  object.set_points(tmp);
+}
+
+
+/// CALLBACKS
+
 
 GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
   if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -247,38 +246,28 @@ GLvoid key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action,
       case GLFW_KEY_ESCAPE:glfwSetWindowShouldClose(window, GL_TRUE);
         break;
       case GLFW_KEY_ENTER:is_clipping = !is_clipping;
-        if (is_clipping) {
-          object.load_buffer();
-          sutherland_hodgman(object, clipper);
-
+        if (is_clipping) {         // Разбиваем на отдельные области во избежание ложных ребер
           partition.clear();
-          auto temp = object.getPoints();
+          auto temp = object.get_points();
           for (int i = 0; i < temp.size() - 1; i++) {
             for (int j = i + 1; j < temp.size(); j++) {
               if (isParallel({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})
-                  && innerLine({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})) {
+                  && inner_line({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})) {
                 partition.insert(i);
                 partition.insert(j);
               }
-              cout << isParallel({temp[i], temp[i + 1]}, {temp[j % temp.size()], temp[(j + 1) % temp.size()]})
-                   << " " << i << "  " << j
-                   << "  [(" << temp[i].x << ", " << temp[i].y << ") , (" << temp[i + 1].x << ", " << temp[i + 1].y
-                   << ")]; "
-                   << "  [(" << temp[j % temp.size()].x << ", " << temp[j % temp.size()].y << ") , ("
-                   << temp[(j + 1) % temp.size()].x << ", " << temp[(j + 1) % temp.size()].y << ")]; " << endl;
             }
-            cout << endl;
           }
-
+          object.load_buffer();
+          sutherland_hodgman(object, clipper);
         } else object.swap_buffers();
         break;
-      case GLFW_KEY_SPACE:no_to_clipping = !no_to_clipping;
+      case GLFW_KEY_SPACE:
+        no_to_clipping = !no_to_clipping;
         break;
     }
   }
 }
-
-float kW = 1, kH = 1;
 
 GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLint mods) {
   if (action == GLFW_PRESS) {
@@ -286,40 +275,35 @@ GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLi
     switch (button) {
       case GLFW_MOUSE_BUTTON_LEFT:glfwGetCursorPos(window, &x, &y);
         object.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
-        cout << "BLUE: " << x << ", " << y << endl;
         break;
       case GLFW_MOUSE_BUTTON_RIGHT:glfwGetCursorPos(window, &x, &y);
-        if (clipper.size() <= 2 || !order) {
+        if (clipper.size() <= 2 || !clipper.get_on_tour()) {          // Меньше трех точек или не определен обход - добавляем вершину
           clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
-          if (clipper.size() > 2) {
+          if (clipper.size() > 2) {                                   // Обход не опредеден - определяем его
             int i = 0;
-            vector<Vertex> tmp = clipper.getPoints();
+            vector<vertex> tmp = clipper.get_points();
             do {
-              Edge e1(tmp[i], tmp[i + 1]), e2(tmp[i + 1], tmp[i + 2]);
-              order = e1.x() * e2.y() - e1.y() * e2.x();
-            } while (i && !order);
-            clipper.set_on_tour(order / abs(order));
-            cout << order / abs(order) << endl;
+              edge e1(tmp[i % tmp.size()], tmp[(i + 1)  % tmp.size()]),
+                   e2(tmp[(i + 1)  % tmp.size()], tmp[(i + 2)  % tmp.size()]);
+              clipper.set_on_tour(normal(vector_prod(e1, e2)));
+            } while (!clipper.get_on_tour());
           }
-        } else {
-          double ord1 = 0, ord2 = 0, ord3 = 0;
-          vector<Vertex> tmp = clipper.getPoints();
-          Edge e1(tmp[clipper.size() - 2], tmp[clipper.size() - 1]),
-               e2(tmp[clipper.size() - 1], {static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}),
-               e3({static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}, tmp[0]),
-               e4(tmp[0], tmp[1]);
+        } else {                                      // В противном случае добавляем точку (и инцидентные ей ребра) только тогда,
+          double ord1 = 0, ord2 = 0, ord3 = 0;        // когда при этом не нарушается выпуклость отсекателя
+          vector<vertex> tmp = clipper.get_points();
+          edge e1(tmp[clipper.size() - 2], tmp[clipper.size() - 1]),
+              e2(tmp[clipper.size() - 1], {static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}),
+              e3({static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}, tmp[0]),
+              e4(tmp[0], tmp[1]);
           ord1 = vector_prod(e1, e2);
           ord2 = vector_prod(e3, e4);
           ord3 = vector_prod(e2, e3);
-          if(normal(ord1) == clipper.get_on_tour() &&
-             normal(ord2) == clipper.get_on_tour() &&
-             normal(ord3) == clipper.get_on_tour()){
+          if (normal(ord1) == clipper.get_on_tour() &&
+              normal(ord2) == clipper.get_on_tour() &&
+              normal(ord3) == clipper.get_on_tour()) {
             clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
           }
-          cout << ord1 / abs(ord1) << endl;
         }
-
-        cout << "RED: " << x << ", " << y << endl;
         break;
     }
   }
@@ -347,6 +331,7 @@ int main() {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
+
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, key_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -355,8 +340,6 @@ int main() {
   glViewport(0, 0, width, height);
 
   while (!glfwWindowShouldClose(window)) {
-
-    //glViewport(0, 0, width, height);
 
     glClearColor(0.7, 1, 1, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -370,7 +353,7 @@ int main() {
     glScalef(kW, kH, 1);
 
     glLineWidth(3);
-    glColor3b(50, 0, 127);
+    glColor3b(0, 0, 127);
     object.draw(GL_LINE_LOOP, is_clipping);
 
     glColor3b(127, 0, 0);
