@@ -20,19 +20,22 @@ struct Vertex {
 
 struct Edge {
   Edge(Vertex f, Vertex s) : first(f), second(s) {};
-  double x() { return second.x - first.x; }
-  double y() { return second.y - first.y; }
+  double x() const { return second.x - first.x; }
+  double y() const { return second.y - first.y; }
   Vertex first;
   Vertex second;
 };
 
 class Polygon {
  public:
-  Polygon() { points = vector<Vertex>(0); }
-  explicit Polygon(const vector<Vertex> &p) : points(p) {};
+  Polygon() : on_tour(0) { points = vector<Vertex>(0); }
+  //explicit Polygon(const vector<Vertex> &p) : points(p) {};
 
   const vector<Vertex> &getPoints() const { return points; };
   void setPoints(const vector<Vertex> &p) { points = p; };
+
+  const int &get_on_tour() { return on_tour; };
+  void set_on_tour(const int &t) { on_tour = t; };
 
   int size() const { return points.size(); }
 
@@ -50,12 +53,14 @@ class Polygon {
 
  private:
   vector<Vertex> points;
+  int on_tour;
+
 };
 
 class ClippedPolygon {
  public:
   ClippedPolygon() { points = old_points = vector<Vertex>(0); }
-  explicit ClippedPolygon(const vector<Vertex> &p) : points(p), old_points(p) {};
+  //explicit ClippedPolygon(const vector<Vertex> &p) : points(p), old_points(p) {};
 
   const vector<Vertex> &getPoints() const { return points; };
   void setPoints(const vector<Vertex> &p) { points = p; };
@@ -184,15 +189,19 @@ void sutherland_hodgman(ClippedPolygon &object,
   object.setPoints(tmp);
 }
 
-double scolarProd(const Vertex &A, const Vertex &B) {
+double scalar_prod(const Vertex &A, const Vertex &B) {
   return A.x * B.x + A.y * B.y;
+}
+
+double vector_prod(const Edge &A, const Edge &B) {
+  return A.x() * B.y() - A.y() * B.x();
 }
 
 const double eps = 1e-6;
 
-double abs(const double &a) {
-  return a < 0 ? -a : a;
-}
+double abs(const double &a) { return a < 0 ? -a : a; }
+
+int normal(const double &a) { return a / abs(a); }
 
 bool equal(const double &a, const double &b) {
   return abs(a - b) < eps;
@@ -205,8 +214,8 @@ bool isParallel(const Edge &A, const Edge &B) {
   Vertex normA = Vertex(-yA, xA), normB = Vertex(-yB, xB);
 
   double a_A = -yA, b_A = xA, a_B = -yB, b_B = xB;
-  double c_A = -scolarProd({-yA, xA}, {A.first.x, A.first.y}),
-      c_B = -scolarProd({-yB, xB}, {B.first.x, B.first.y});
+  double c_A = -scalar_prod({-yA, xA}, {A.first.x, A.first.y}),
+      c_B = -scalar_prod({-yB, xB}, {B.first.x, B.first.y});
 
   if ((a_A == 0 && a_B == 0 && equal(b_A / b_B, c_A / c_B)) || (b_A == 0 && b_B == 0 && equal(a_A / a_B, c_A / c_B)))
     return true;
@@ -280,16 +289,36 @@ GLvoid mouse_button_callback(GLFWwindow *window, GLint button, GLint action, GLi
         cout << "BLUE: " << x << ", " << y << endl;
         break;
       case GLFW_MOUSE_BUTTON_RIGHT:glfwGetCursorPos(window, &x, &y);
-        clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
-        if (clipper.size() > 2 && !order) {
-          int i = 0;
+        if (clipper.size() <= 2 || !order) {
+          clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
+          if (clipper.size() > 2) {
+            int i = 0;
+            vector<Vertex> tmp = clipper.getPoints();
+            do {
+              Edge e1(tmp[i], tmp[i + 1]), e2(tmp[i + 1], tmp[i + 2]);
+              order = e1.x() * e2.y() - e1.y() * e2.x();
+            } while (i && !order);
+            clipper.set_on_tour(order / abs(order));
+            cout << order / abs(order) << endl;
+          }
+        } else {
+          double ord1 = 0, ord2 = 0, ord3 = 0;
           vector<Vertex> tmp = clipper.getPoints();
-          do {
-            Edge e1(tmp[i], tmp[i + 1]), e2(tmp[i + 1], tmp[i + 2]);
-            order = e1.x() * e2.y() - e1.y() * e2.x();
-          } while (i && !order);
-          cout << order << endl;
+          Edge e1(tmp[clipper.size() - 2], tmp[clipper.size() - 1]),
+               e2(tmp[clipper.size() - 1], {static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}),
+               e3({static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH}, tmp[0]),
+               e4(tmp[0], tmp[1]);
+          ord1 = vector_prod(e1, e2);
+          ord2 = vector_prod(e3, e4);
+          ord3 = vector_prod(e2, e3);
+          if(normal(ord1) == clipper.get_on_tour() &&
+             normal(ord2) == clipper.get_on_tour() &&
+             normal(ord3) == clipper.get_on_tour()){
+            clipper.add_vertex(static_cast<int>(x) / kW, height / kH - static_cast<int>(y) / kH);
+          }
+          cout << ord1 / abs(ord1) << endl;
         }
+
         cout << "RED: " << x << ", " << y << endl;
         break;
     }
