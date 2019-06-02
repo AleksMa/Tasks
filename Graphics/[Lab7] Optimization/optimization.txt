@@ -1,0 +1,7 @@
+normal                          - 420
+without z-buffer (DEPTH_TEST)   - 450
+without normalization           - 480
+partition_optimization          - ??
+glLists                         - ??
+compression                     - ??
+
